@@ -1,0 +1,205 @@
+using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using UnityEngine;
+
+namespace Squad
+{
+    /// <summary>
+    /// Actions for the three-goal chaser (catch / investigate sound / wander).
+    /// 적의 goal은 추격/소리 조사/배회 3가지
+    ///
+    /// 습격 : ReachPlayer 행동을 통해 도달 가능
+    /// ReachPlayer의 전제조건 : playerVisible=true
+    ///               효과     : playerCaught=true
+    /// 
+    /// 소리 조사 : MoveToSound와 SerchSoundArea 행동을 차례로 행하여 도달 가능
+    /// MoveToSound의 전제조건 : heardSound=true
+    ///               효과     : atSoundLocation=true
+    /// SearchSoundArea의 전제조건 : atSoundLocation=true
+    ///                   효과     : soundInvestigated=true
+    /// 
+    /// 배회 : WanderStep을 통해 도달 가능
+    /// WanderStep의 전제조건 : 없음
+    ///              효과     : wandering=true
+    ///
+    /// 각 행동의 Perform 함수를 통해 적이 실제로 이동하고, 이동이 끝나면 true를 return한다
+    /// Planner는 추상적인 개념인 facts들 사이에서만 관여할 뿐이고,
+    /// 실제 월드에 영향을 미치는 것은 오직 Perform 뿐이다
+    ///
+    /// Movement here calls into the chaser's Locomotion helper (see
+    /// ChaserLocomotion.cs), which wraps the A* Pathfinder so these actions
+    /// don't need to know how pathfinding works.
+    /// </summary>
+    public static class ChaserActions
+    {
+        /// <summary>
+        /// 적 개체가 할 수 있는 행동의 목록을 불러온다.
+        /// </summary>
+        /// <returns></returns>
+        public static List<GoapAction> Build()
+        {
+            return new List<GoapAction>
+            {
+                // ChaserGoals와 달리 각 Action들이 서로 다른 실행 코드를 가지고 있어
+                // GoapAction과 상속 구조를 띄기 때문에,
+                // 자식 클래스들의 인스턴스를 생성하여 List에 담아 반환한다.
+                new ReachPlayer(),
+                new MoveToSound(),
+                new SearchSoundArea(),
+                new WanderStep(),
+            };
+        }
+    }
+
+    // ---- Catch goal --------------------------------------------------------
+
+    /// <summary>
+    /// 습격을 목표로 하는 Action
+    /// </summary>
+    public class ReachPlayer : GoapAction
+    {
+        public ReachPlayer()
+        {
+            Name = "ReachPlayer";
+            Preconditions.Facts["playerVisible"] = true;
+            Effects.Facts["playerCaught"] = true;
+        }
+
+        public override float GetCost(ChaserContext ctx) => 1f;
+
+        public override bool Perform(ChaserContext ctx)
+        {
+            // 추격할 플레이어가 없다면 true를 return하여 상태를 빠져나온다
+            if (ctx.Player == null)
+                return true;
+
+            Vector3 target = ctx.Player.position;
+            bool arrived = ctx.Locomotion.MoveTo(target, ctx.CatchRadius, ctx.Blackboard.Alert);
+
+            // 잡았다는 것은 플레이어에게 충분히 접근했고 동시에 플레이어가 보이는 상황
+            // 만약 적과 플레이어가 서로 다른 차원에 있다면,
+            // 플레이어와 아무리 가까워도 playerVisible이 이미 false이기 때문에
+            // 다른 Plan을 재설계할 것이다
+            return arrived;
+        }
+    }
+
+    // ---- Investigate-sound goal -------------------------------------------
+
+    /// <summary>
+    /// 소리 조사를 목표로 하는 첫 번째 Action
+    /// </summary>
+    public class MoveToSound : GoapAction
+    {
+        public MoveToSound()
+        {
+            Name = "MoveToSound";
+            Preconditions.Facts["heardSound"] = true;
+            Effects.Facts["atSoundLocation"] = true;
+        }
+
+        public override bool Perform(ChaserContext ctx)
+        {
+            Vector3 soundPos = ctx.Blackboard.LastSoundPos;
+            bool arrived = ctx.Locomotion.MoveTo(soundPos, ctx.ArriveRadius, ctx.Blackboard.Alert);
+
+            // 경로가 없을 경우의 방어 코드.
+            if (!ctx.Locomotion.HasValidPath)
+            {
+                ctx.Blackboard.ClearSound();
+                return true;
+            }
+            return arrived;
+        }
+    }
+
+    /// <summary>
+    /// 소리 조사를 목표로 하는 두 번째 Action
+    /// </summary>
+    public class SearchSoundArea : GoapAction
+    {
+        private float _searchTimer;
+        private const float SearchDuration = 3f;
+
+        public SearchSoundArea()
+        {
+            Name = "SearchSoundArea";
+            Preconditions.Facts["atSoundLocation"] = true;
+            Effects.Facts["soundInvestigated"] = true;
+        }
+
+        public override bool Perform(ChaserContext ctx)
+        {
+            // 검색에 든 시간 추가
+            _searchTimer += Time.deltaTime;
+            ctx.Locomotion.LookAround();
+
+            // 검색을 충분히 했다면
+            if (_searchTimer >= SearchDuration)
+            {
+                // 검색에 든 시간 초기화
+                _searchTimer = 0f;
+                // 같은 소리를 다시 조사하지 않도록 소리 제거
+                ctx.Blackboard.ClearSound();
+                // 완료 처리
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 배회를 목표로 하는 Action
+    /// </summary>
+    public class WanderStep : GoapAction
+    {
+        // 도착 후 다음 배회를 시작하기 전 대기 중인지, 대기 시간이 얼마나 지났는지,
+        // 그리고 이번에 대기할 시간(매번 랜덤하게 새로 뽑음).
+        private bool _pausing;
+        private float _pauseTimer;
+        private float _pauseDuration;
+
+        public WanderStep()
+        {
+            Name = "WanderStep";
+            // 전제조건 없음
+            Effects.Facts["wandering"] = true;
+        }
+
+        public override bool Perform(ChaserContext ctx)
+        {
+            // 도착 직후 대기 중이라면 이동하지 않고 타이머만 진행시킨다.
+            // 대기가 끝나야 비로소 완료 처리하여 다음 배회 지점으로 넘어간다.
+            if (_pausing)
+            {
+                _pauseTimer += Time.deltaTime;
+                if (_pauseTimer < _pauseDuration)
+                    return false;
+
+                _pausing = false;
+                _pauseTimer = 0f;
+                return true;
+            }
+
+            // Ask locomotion for a wander target if we don't have one yet, then
+            // walk to it. Completing one leg satisfies "wandering" for this
+            // planning cycle; the next replan will simply wander again unless a
+            // higher-priority goal (chase / investigate) has become available.
+            Vector3 target = ctx.Locomotion.GetWanderTarget();
+            bool arrived = ctx.Locomotion.MoveTo(target, ctx.ArriveRadius, ctx.Blackboard.Alert);
+            // 마찬가지로 배회 장소에 도착하면
+            // 또 다시 배회하지 않도록 장소 제거
+            if (arrived || !ctx.Locomotion.HasValidPath)
+            {
+                ctx.Locomotion.ClearWanderTarget();
+                // 도착했다면 바로 완료 처리하지 않고 대기 단계로 넘어간다.
+                if (arrived)
+                {
+                    _pausing = true;
+                    _pauseDuration = Random.Range(ctx.WanderPauseMin, ctx.WanderPauseMax);
+                }
+            }
+            return false;
+        }
+    }
+}
