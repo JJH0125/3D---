@@ -139,6 +139,7 @@ namespace Squad
             LastSoundPosition = soundPosition;
 
             /// 소리가 들렸지만 플레이어는 보이지 않을 때
+            /// 벽 너머의 플레이어가 내는 소리, 발전기 소리 등등
             if (!PlayerCurrentlyVisible)
                 LastPlayerPosition = soundPosition;
         }
