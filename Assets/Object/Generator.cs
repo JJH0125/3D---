@@ -39,6 +39,7 @@ namespace Squad
 
         private float _emitTimer;
         private bool _playerInRange;
+        private bool _isInvestigated;
 
         private void Start()
         {

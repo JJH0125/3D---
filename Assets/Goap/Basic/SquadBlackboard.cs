@@ -39,7 +39,9 @@ namespace Squad
         public bool PlayerCurrentlyVisible { get; private set; }
         // 플레이어가 마지막까지 있었던 위치
         public Vector3 LastPlayerPosition { get; private set; }
-        // 플레이어가 마지막으로 보인 뒤 지난 시간 (지금은 사용하지 않지만 추후 사용될 여지 있음)
+        // 플레이어가 마지막으로 보인 뒤 지난 시간
+        // 지금은 상태 감소를 TimeInAlertState가 맡기 때문에
+        // 사용하지 않지만 추후 사용될 여지 있음
         public float TimeSinceLastSeen { get; private set; } = Mathf.Infinity;
 
         // --- Sound facts (for the InvestigateSound goal) ---
@@ -129,17 +131,19 @@ namespace Squad
         /// 소리의 정보가 업데이트된다
         public void ReportSound(Vector3 soundPosition, Sound sound)
         {
+            // 더 높은 레벨의 소리를 들었다면 격상시킨다.
             if (sound.Alert > Alert)
                 SetAlert(sound.Alert);
-            else
-                // 상태가 같거나 낮은 소리를 들어도 시간은 초기화되도록
+            // 같은 레벨의 소리를 들었다면 타이머만 유지한다.
+            else if (sound.Alert == Alert)
                 TimeInAlertState = 0f;
+            // 더 낮은 소리에는 반응하지 않고 아무 행동도 취하지 않는다.
             
             HasSound = true;
             LastSoundPosition = soundPosition;
 
-            /// 소리가 들렸지만 플레이어는 보이지 않을 때
             /// 벽 너머의 플레이어가 내는 소리, 발전기 소리 등등
+            /// 소리는 들리지만 플레이어가 보이지 않는 상황일 때
             if (!PlayerCurrentlyVisible)
                 LastPlayerPosition = soundPosition;
         }
