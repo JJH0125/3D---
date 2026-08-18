@@ -8,7 +8,8 @@ namespace Squad
         private const int MaxHits = 16;
         private static readonly Collider[] _hits = new Collider[MaxHits];
         
-        // pos에서 sound를 방출한다. sound.Radius 안에 있으면서 enemyLayer 안에 속한 개체에게 이 소리를 보고한다.
+        /// position에서 sound를 방출한다.
+        /// Radius 안에 있으면서 enemyLayer 안에 속한 개체가 있다면 ReportSound한다.
         public static void Emit(Vector3 position, Sound sound, LayerMask enemyLayer)
         {
             if (SquadBlackboard.Instance == null)
