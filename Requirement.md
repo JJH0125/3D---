@@ -8,3 +8,10 @@ Alert 상태의 조절
 Alerted : 눈으로 봤다 => 시야로만 유지 가능
 Suspicious : 뭔가 있다 => 소리로만 유지 가능
 Calm : 아무것도 없다
+
+blackboard 내의 미사용 필
+
+필드	                상태	            용도
+TimeSinceLastSeen	갱신도 안 됨	        미정
+LastPlayerPosition	갱신됨, 읽는 곳 없음	놓친 뒤 수색
+_roleClaims	        미사용	                다중 추격자

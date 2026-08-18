@@ -157,7 +157,6 @@ namespace Squad
         // 그리고 이번에 대기할 시간(매번 랜덤하게 새로 뽑음).
         private bool _pausing;
         private float _pauseTimer;
-        private float _pauseDuration;
 
         public WanderStep()
         {
@@ -172,13 +171,14 @@ namespace Squad
             // 대기가 끝나야 비로소 완료 처리하여 다음 배회 지점으로 넘어간다.
             if (_pausing)
             {
-                _pauseTimer += Time.deltaTime;
-                if (_pauseTimer < _pauseDuration)
-                    return false;
-
-                _pausing = false;
-                _pauseTimer = 0f;
-                return true;
+                ctx.Locomotion.LookAround();
+                _pauseTimer -= Time.deltaTime;
+                if (_pauseTimer <= 0f)
+                {
+                    _pausing = false;
+                    return true;
+                }
+                return false;
             }
 
             // Ask locomotion for a wander target if we don't have one yet, then
@@ -196,7 +196,7 @@ namespace Squad
                 if (arrived)
                 {
                     _pausing = true;
-                    _pauseDuration = Random.Range(ctx.WanderPauseMin, ctx.WanderPauseMax);
+                    _pauseTimer = Random.Range(ctx.WanderPauseMin, ctx.WanderPauseMax);
                 }
             }
             return false;

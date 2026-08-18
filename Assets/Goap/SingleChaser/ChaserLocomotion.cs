@@ -107,9 +107,8 @@ namespace Squad
         {
             StopHorizontal();
             _rigidbody.MoveRotation(_rigidbody.rotation *
-                Quaternion.AngleAxis(turnSpeed * 12f * Time.fixedDeltaTime, Vector3.up));
+                Quaternion.AngleAxis(turnSpeed * 12f * Time.DeltaTime, Vector3.up));
         }
-
 
         /// <summary>
         /// 추격자 주변의 무작위 새로운 지점을 생성하여
