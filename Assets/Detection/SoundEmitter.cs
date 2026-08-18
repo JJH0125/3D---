@@ -10,7 +10,8 @@ namespace Squad
         
         /// position에서 sound를 방출한다.
         /// Radius 안에 있으면서 enemyLayer 안에 속한 개체가 있다면 ReportSound한다.
-        public static void Emit(Vector3 position, Sound sound, LayerMask enemyLayer)
+        public static void Emit(Vector3 position, Sound sound, LayerMask enemyLayer,
+            GameObject source = null)
         {
             if (SquadBlackboard.Instance == null)
                 return;
@@ -21,7 +22,7 @@ namespace Squad
             if (count == 0)
                 return;
 
-            SquadBlackboard.Instance.ReportSound(position, sound);
+            SquadBlackboard.Instance.ReportSound(position, sound, source);
         }
     }
 }

@@ -39,7 +39,6 @@ namespace Squad
 
         private float _emitTimer;
         private bool _playerInRange;
-        private bool _isInvestigated;
 
         private void Start()
         {
@@ -59,7 +58,7 @@ namespace Squad
 
             if (_emitTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer);
+                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer, gameObject);
                 _emitTimer = emitInterval;
             }
         }

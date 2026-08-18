@@ -9,7 +9,10 @@ Alerted : 눈으로 봤다 => 시야로만 유지 가능
 Suspicious : 뭔가 있다 => 소리로만 유지 가능
 Calm : 아무것도 없다
 
-blackboard 내의 미사용 필
+turnSpeed * 12f => 12를 곱해야 하는 이유?
+turnSpeed를 조금 손볼 필요가 있을까?
+
+blackboard 내의 미사용 필드
 
 필드	                상태	            용도
 TimeSinceLastSeen	갱신도 안 됨	        미정

@@ -157,6 +157,7 @@ namespace Squad
         // 그리고 이번에 대기할 시간(매번 랜덤하게 새로 뽑음).
         private bool _pausing;
         private float _pauseTimer;
+        private float _rewanderInterval;
 
         public WanderStep()
         {
@@ -178,7 +179,7 @@ namespace Squad
                     _pausing = false;
                     return true;
                 }
-                return false;
+                    return false;
             }
 
             // Ask locomotion for a wander target if we don't have one yet, then

@@ -57,6 +57,10 @@ namespace Squad
         public bool HasSound { get; private set; }
         // 그 소리의 위치
         public Vector3 LastSoundPosition { get; private set; }
+        // 소리의 출처
+        public GameObject SoundSource { get; private set; }
+
+        private readonly HashSet<GameObject> _investigatedSources = new();
 
         // 다중 추격자 전용 //
         // 추격, 매복 등등의 역할을 나누고, 각 추격자들이 일제히 같은 행동을 하지 않도록 조율
@@ -129,7 +133,7 @@ namespace Squad
         /// 소리가 유발하는 경계 상태를 먼저 본 뒤
         /// 현재 상태보다 높다면 그에 맞게 격상시키고
         /// 소리의 정보가 업데이트된다
-        public void ReportSound(Vector3 soundPosition, Sound sound)
+        public void ReportSound(Vector3 soundPosition, Sound sound, GameObject source = null)
         {
             // 더 높은 레벨의 소리를 들었다면 격상시킨다.
             if (sound.Alert > Alert)
@@ -141,6 +145,7 @@ namespace Squad
             
             HasSound = true;
             LastSoundPosition = soundPosition;
+            SoundSource = source;
 
             /// 벽 너머의 플레이어가 내는 소리, 발전기 소리 등등
             /// 소리는 들리지만 플레이어가 보이지 않는 상황일 때
