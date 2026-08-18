@@ -57,8 +57,8 @@ namespace Squad
         public override float GetCost(ChaserContext ctx) => _cost;
         public override bool Perform(ChaserContext ctx)
         {
-            // Hook your 3D A* pathfinder here: path to ctx.Blackboard.LastKnownPlayerPos.
-            Vector3 target = ctx.Blackboard.LastKnownPlayerPos;
+            // Hook your 3D A* pathfinder here: path to ctx.Blackboard.LastPlayerPosition.
+            Vector3 target = ctx.Blackboard.LastPlayerPosition;
             ctx.Self.position = Vector3.MoveTowards(ctx.Self.position, target, 3f * Time.deltaTime);
             return Vector3.Distance(ctx.Self.position, target) < 1.5f;
         }
@@ -85,7 +85,7 @@ namespace Squad
         {
             // Pick a chokepoint between player's last pos and likely escape.
             // Placeholder: move toward last known pos from a flanking offset.
-            Vector3 target = ctx.Blackboard.LastKnownPlayerPos + Vector3.right * 3f;
+            Vector3 target = ctx.Blackboard.LastPlayerPosition + Vector3.right * 3f;
             ctx.Self.position = Vector3.MoveTowards(ctx.Self.position, target, 3f * Time.deltaTime);
             bool arrived = Vector3.Distance(ctx.Self.position, target) < 1f;
             if (arrived) ctx.Blackboard.ReleaseRole("ambush", ctx.Agent.chaserId);
@@ -107,7 +107,7 @@ namespace Squad
         public override float GetCost(ChaserContext ctx) => _cost;
         public override bool Perform(ChaserContext ctx)
         {
-            Vector3 target = ctx.Blackboard.LastKnownPlayerPos;
+            Vector3 target = ctx.Blackboard.LastPlayerPosition;
             ctx.Self.position = Vector3.MoveTowards(ctx.Self.position, target, 2.5f * Time.deltaTime);
             return Vector3.Distance(ctx.Self.position, target) < 1f;
         }

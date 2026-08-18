@@ -204,8 +204,8 @@ namespace Squad
             if (_ctx != null && _ctx.Blackboard != null && _ctx.Blackboard.HasSound)
             {
                 Gizmos.color = Color.cyan;
-                Gizmos.DrawWireSphere(_ctx.Blackboard.LastSoundPos, 0.4f);
-                Gizmos.DrawLine(transform.position, _ctx.Blackboard.LastSoundPos);
+                Gizmos.DrawWireSphere(_ctx.Blackboard.LastSoundPosition, 0.4f);
+                Gizmos.DrawLine(transform.position, _ctx.Blackboard.LastSoundPosition);
             }
         }
     }

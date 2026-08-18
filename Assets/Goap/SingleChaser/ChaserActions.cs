@@ -100,7 +100,7 @@ namespace Squad
 
         public override bool Perform(ChaserContext ctx)
         {
-            Vector3 soundPos = ctx.Blackboard.LastSoundPos;
+            Vector3 soundPos = ctx.Blackboard.LastSoundPosition;
             bool arrived = ctx.Locomotion.MoveTo(soundPos, ctx.ArriveRadius, ctx.Blackboard.Alert);
 
             // 경로가 없을 경우의 방어 코드.
