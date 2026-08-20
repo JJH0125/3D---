@@ -9,14 +9,16 @@ f/g/h 비용
 heapindex
 
 2. NodeHeap.cs
+Node를 담는 Heap을 관리하는 클래스.
+
 Add : 노드 추가
 RemoveFirst : 0번 인덱스의 노드 제거하여 return
 UpdateItem : 해당 노드를 맞는 위치에 정렬
 Contains : heap에 해당 노드가 있는지
-Node를 담는 Heap을 관리하는 클래스.
 
 3. PathGrid.cs
 월드를 XZ 평면 위의 격자 노드들로 쪼개고, 각 칸이 walkable한지 판정해서 들고 있는 클래스.
+
 BuildGrid : 격자 크기를 계산하고 Physics.CheckBox로 각 칸의 장애물 여부를 검사해 Node 배열을 채운다. Awake에서 자동 호출.
 NodeFromWorldPoint : 월드 좌표가 속한 Node를 반환. Pathfinder.FindPath와 IsWalkable에서 참조.
 GetNeighbors : 어떤 노드의 이동 가능한 이웃 노드들을 반환(대각선 코너컷 방지 포함). Pathfinder.FindPath에서 참조.
@@ -25,19 +27,12 @@ OnDrawGizmos : Scene 뷰에서 격자와 DebugPath를 색으로 시각화.
 
 4. Pathfinder.cs
 PathGrid 위에서 그리드 A*를 돌려 실제 경로(월드 좌표 리스트)를 계산하는 클래스.
+
 IsWalkable : PathGrid.IsWalkable을 그대로 전달하는 래퍼. ChaserLocomotion.GetWanderTarget에서 참조.
-FindPath : 시작~목표 사이 A* 탐색 후 waypoint 리스트 반환. ChaserLocomotion.MoveTo, (구버전)ChaserAgent.RequestPath에서 참조.
+FindPath : 시작~목표 사이 A* 탐색 후 waypoint 리스트 반환. ChaserLocomotion.MoveTo에서 참조.
 Heuristic : 대각선 거리 기반 휴리스틱 비용 계산. FindPath 내부에서만 사용.
 Distance : 인접 노드 사이 실제 이동 비용(직선 10 / 대각선 14). FindPath 내부에서만 사용.
 RetracePath : 목표 노드에서 Parent를 거슬러 경로를 역추적하고 PathGrid.DebugPath에 기록, waypoint 리스트로 변환. FindPath 내부에서만 사용.
-
-5. ChaserAgent.cs (Astar3D, ⚠ CLAUDE.md 기준 deprecated — ChaserLocomotion + HorrorChaserAgent로 대체되어 제거 예정)
-GOAP 없이 순수 A* 길찾기만 확인하려고 만든 테스트용 추격자 이동 스크립트. 실제 게임 로직에서는 쓰이지 않는다.
-Awake : Rigidbody, Pathfinder 참조 캐싱.
-Update : 재계산 타이머와 타겟 이동량을 검사해 RequestPath 호출 여부 결정.
-FixedUpdate : 매 물리 프레임 FollowPath 호출.
-RequestPath : Pathfinder.FindPath로 새 경로를 계산. Update에서 참조.
-FollowPath : 경로를 waypoint 단위로 따라가며 Rigidbody를 이동/회전. FixedUpdate에서 참조.
 
 ── Detection ──
 
@@ -189,3 +184,5 @@ IsInLayerMask : 레이어가 LayerMask에 포함되는지 비트 연산으로 �
 Activate : 발전기를 켜고 타이머를 초기화, 안내 문구를 숨긴다. Update에서 참조.
 Deactivate : 발전기를 끄고, 플레이어가 아직 범위 안이면 안내 문구를 다시 띄운다. 현재 이 스크립트 밖에서 호출하는 코드는 없음(외부 트리거용으로 열어 둔 공개 API).
 
+게임 시작 시
+Awake
