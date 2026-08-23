@@ -1,0 +1,20 @@
+다중 추격자일 때의 문제
+Alert 상태를 모든 적에게 일괄적으로 적용할지?
+
+발전기를 적이 한번 조사하면, 그 주변에 있는 다른 적들도 조사 경험을 공유
+그러나 멀리 있는 적은 공유하지 못해, 그 발전기를 인지하면 여전히 조사
+
+Alert 상태의 조절
+Alerted : 눈으로 봤다 => 시야로만 유지 가능
+Suspicious : 뭔가 있다 => 소리로만 유지 가능
+Calm : 아무것도 없다
+
+turnSpeed * 12f => 12를 곱해야 하는 이유?
+turnSpeed를 조금 손볼 필요가 있을까?
+
+blackboard 내의 미사용 필드
+
+필드	                상태	            용도
+TimeSinceLastSeen	갱신도 안 됨	        미정
+LastPlayerPosition	갱신됨, 읽는 곳 없음	놓친 뒤 수색
+_roleClaims	        미사용	                다중 추격자

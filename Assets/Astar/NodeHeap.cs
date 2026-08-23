@@ -39,6 +39,7 @@ namespace Astar3D
 
         public void Clear() => _count = 0;
 
+        /// 노드를 Sort해서 위로 올려보낸다.
         private void SortUp(Node node)
         {
             int parentIndex;
@@ -53,6 +54,7 @@ namespace Astar3D
             }
         }
 
+        /// 노드를 Sort해서 아래로 내려보낸다.
         private void SortDown(Node node)
         {
             while (true)

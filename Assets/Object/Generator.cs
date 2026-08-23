@@ -33,8 +33,6 @@ namespace Squad
         [SerializeField] private string promptMessage = "[E] 발전기 작동";
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
-        [Tooltip("작동시킬 수 있는 거리")]
-        [SerializeField] private float interactiveRange = 3f;
 
         // 작동 중인가. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
         public bool IsActive { get; private set; }
@@ -45,7 +43,6 @@ namespace Squad
         private void Start()
         {
             IsActive = startsActive;
-            return;
         }
 
         private void Update()
@@ -61,7 +58,7 @@ namespace Squad
 
             if (_emitTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer);
+                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer, gameObject);
                 _emitTimer = emitInterval;
             }
         }

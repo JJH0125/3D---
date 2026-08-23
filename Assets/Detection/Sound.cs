@@ -26,6 +26,7 @@ namespace Squad
         }
     }
 
+    /// 소리의 이름, 반경, 지속 시간, 적이 들었을 때 유발하는 경계 상태, 차원 관통 여부
     public static class SoundList
     {
         public static readonly Sound Walking =
