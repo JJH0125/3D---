@@ -189,3 +189,14 @@ IsInLayerMask : 레이어가 LayerMask에 포함되는지 비트 연산으로 �
 Activate : 발전기를 켜고 타이머를 초기화, 안내 문구를 숨긴다. Update에서 참조.
 Deactivate : 발전기를 끄고, 플레이어가 아직 범위 안이면 안내 문구를 다시 띄운다. 현재 이 스크립트 밖에서 호출하는 코드는 없음(외부 트리거용으로 열어 둔 공개 API).
 
+소리가 발생되는 과정
+(처음 듣는 소리)
+각 오브젝트의 스크립트가 Emit 호출
+Emit 함수는 ReportSound 호출
+ReportSound는 이미 조사된 소리가 아니라면 board를 업데이트하여 적이 조사하게끔 유발
+적은 조사한 후 AddInvestigateCompleted 호출
+AddInvestigateCompleted는 board를 업데이트하여 조사된 소리 관리
+(이미 들었던 소리)
+Emit 호출
+ReportSound 호출
+ReportSound는 조사된 소리를 받았으므로 아무것도 하지 않음

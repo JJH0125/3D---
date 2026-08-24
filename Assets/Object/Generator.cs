@@ -34,16 +34,13 @@ namespace Squad
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
-        // 작동 중인가. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
+        // 작동 중인지 여부. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
         public bool IsActive { get; private set; }
-
         private float _emitTimer;
+        // 작동시킬 수 있는 범위 내에 플레이어가 들어와있는지 여부.
         private bool _playerInRange;
 
-        private void Start()
-        {
-            IsActive = startsActive;
-        }
+        private void Start() => IsActive = startsActive;
 
         private void Update()
         {

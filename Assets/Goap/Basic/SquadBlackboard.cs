@@ -39,9 +39,9 @@ namespace Squad
         public bool PlayerCurrentlyVisible { get; private set; }
         // 플레이어가 마지막까지 있었던 위치
         public Vector3 LastPlayerPosition { get; private set; }
-        // 플레이어가 마지막으로 보인 뒤 지난 시간
-        // 지금은 상태 감소를 TimeInAlertState가 맡기 때문에
-        // 사용하지 않지만 추후 사용될 여지 있음
+        /// 플레이어가 마지막으로 보인 뒤 지난 시간
+        /// 지금은 상태 감소를 TimeInAlertState가 맡기 때문에
+        /// 사용하지 않지만 추후 사용될 여지 있음
         public float TimeSinceLastSeen { get; private set; } = Mathf.Infinity;
 
         // --- Sound facts (for the InvestigateSound goal) ---
@@ -57,10 +57,10 @@ namespace Squad
         public bool HasSound { get; private set; }
         // 그 소리의 위치
         public Vector3 LastSoundPosition { get; private set; }
-        // 소리의 출처
+        // 지금 조사 중인 (플레이어가 아닌 대상의) 소리의 출처
         public GameObject SoundSource { get; private set; }
-
-        private readonly HashSet<GameObject> _investigatedSources = new();
+        // 조사가 완료된 오브젝트의 모음. 이곳에 담긴 오브젝트가 내는 소리는 무시한다.
+        private readonly HashSet<GameObject> _investigateCompleted = new();
 
         // 다중 추격자 전용 //
         // 추격, 매복 등등의 역할을 나누고, 각 추격자들이 일제히 같은 행동을 하지 않도록 조율
@@ -77,6 +77,7 @@ namespace Squad
             }
 
             Instance = this;
+            _investigateCompleted.Clear();
         }
 
         private void Update()
@@ -135,6 +136,10 @@ namespace Squad
         /// 소리의 정보가 업데이트된다
         public void ReportSound(Vector3 soundPosition, Sound sound, GameObject source = null)
         {
+            // 이미 조사한 것의 소리라면 아무것도 하지 않는다
+            if (source != null && _investigateCompleted.Contains(source))
+                return;
+            
             // 더 높은 레벨의 소리를 들었다면 격상시킨다.
             if (sound.Alert > Alert)
                 SetAlert(sound.Alert);
@@ -153,8 +158,19 @@ namespace Squad
                 LastPlayerPosition = soundPosition;
         }
 
+        // 조사를 끝낸 오브젝트를 조사 완료 목록에 추가
+        public void AddInvestigateCompleted(GameObject source)
+        {
+            if (source != null)
+                _investigateCompleted.Add(source);
+        }
+
         /// 소리에 대한 조사를 끝냈을 때
-        public void ClearSound() => HasSound = false;
+        public void ClearSound()
+        {
+            HasSound = false;
+            SoundSource = null;
+        }
 
         /// 다중 추격자 전용 ///
         public bool TryClaimRole(string role, int chaserId)

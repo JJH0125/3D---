@@ -106,6 +106,7 @@ namespace Squad
             // 경로가 없을 경우의 방어 코드.
             if (!ctx.Locomotion.HasValidPath)
             {
+                ctx.Blackboard.AddInvestigateCompleted(ctx.Blackboard.SoundSource);
                 ctx.Blackboard.ClearSound();
                 return true;
             }
@@ -139,6 +140,8 @@ namespace Squad
             {
                 // 검색에 든 시간 초기화
                 _searchTimer = 0f;
+                // 조사 완료 목록 추가
+                ctx.Blackboard.AddInvestigateCompleted(ctx.Blackboard.SoundSource);
                 // 같은 소리를 다시 조사하지 않도록 소리 제거
                 ctx.Blackboard.ClearSound();
                 // 완료 처리
