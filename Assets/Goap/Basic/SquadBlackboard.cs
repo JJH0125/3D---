@@ -159,6 +159,7 @@ namespace Squad
         }
 
         // 조사를 끝낸 오브젝트를 조사 완료 목록에 추가
+        // (도달할 수 없는 곳에서 나는 소리에 대해서도 적용)
         public void AddInvestigateCompleted(GameObject source)
         {
             if (source != null)
