@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Squad
 {
-    public class DemensionConverter : MonoBehaviour
+    public class DimensionConverter : MonoBehaviour
     {
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]

@@ -13,138 +13,143 @@ using UnityEngine;
 /// 실제 물리의 "가속도 → 속도 → 위치" 흐름을 손으로 구현하는 셈이다.
 /// </summary>
 
-[RequireComponent(typeof(CharacterController))]
-public class Player : MonoBehaviour
+namespace Squad
 {
-    [Header("■ 필수 연결 — 비워두면 에러")]
-    [Tooltip("카메라")]
-    [SerializeField] private Transform cameraTransform;
-
-    [Header("○ 튜닝 값 — 자유롭게 조절")]
-    [Tooltip("플레이어의 이동속도")]
-    [SerializeField] private float moveSpeed;
-    [Tooltip("달리는 속도에 대한 걷는 속도의 비율")]
-    [SerializeField] private float slowDownWhileWalk;
-    [Tooltip("중력 가속도(음수)")]
-    [SerializeField] private float gravity = -20f;
-    [Tooltip("점프 가능한 높이(m)")]
-    [SerializeField] private float jumpHeight = 1.2f;
-
-    private Vector3 cameraForward;
-    private Vector3 cameraRight;
-
-    private CharacterController controller;
-    private Animator animator;
-
-    // x와 z축은 키보드의 입력을 받아 결정되는 입력값
-    // y축은 수학적으로 계산되는 속도의 값
-    private float X_Axis;
-    private float Y_velocity;
-    private float Z_Axis;
-    private Vector3 horizontal;
-    private bool isWalk;
-    private bool isJump;
-
-    void Awake()
+    [RequireComponent(typeof(CharacterController))]
+    public class Player : MonoBehaviour
     {
-        controller = GetComponent<CharacterController>();
+        [Header("■ 필수 연결 — 비워두면 에러")]
+        [Tooltip("카메라")]
+        [SerializeField] private Transform cameraTransform;
 
-        if (animator == null)
-            animator = GetComponentInChildren<Animator>();
+        [Header("○ 튜닝 값 — 자유롭게 조절")]
+        [Tooltip("플레이어의 이동속도")]
+        [SerializeField] private float moveSpeed;
+        [Tooltip("달리는 속도에 대한 걷는 속도의 비율")]
+        [SerializeField] private float slowDownWhileWalk;
+        [Tooltip("중력 가속도(음수)")]
+        [SerializeField] private float gravity = -20f;
+        [Tooltip("점프 가능한 높이(m)")]
+        [SerializeField] private float jumpHeight = 1.2f;
 
-        /// 쿼터뷰 느낌을 살리기 위해 카메라를 y축 기준 45도로 돌렸기 때문에,
-        /// 방향키 입력에 따른 움직임도 카메라를 따라 돌려야 한다.
-        /// 마우스로 카메라를 회전시키는 기능을 넣지 않기로 했으므로
-        /// 이 작업을 Awake에 해도 무방하지만,
-        /// 만약 기능을 넣게 된다면 실시간으로 카메라의 축을 받아야 하기 때문에
-        /// Move() 함수로 이 내용을 옮겨야 한다.
-        cameraForward = cameraTransform.forward;
-        cameraRight = cameraTransform.right;
-        
-        cameraForward.y = 0f;
-        cameraRight.y = 0f;
-        cameraForward.Normalize();
-        cameraRight.Normalize();
-    }
+        private Vector3 cameraForward;
+        private Vector3 cameraRight;
 
-    void Update()
-    {
-        GetInput();
-        Move();
-        Turn();
-    }
+        private CharacterController controller;
+        private Animator animator;
 
-    // 이동에 필요한 키를 입력받는다
-    void GetInput()
-    {
-        X_Axis = Input.GetAxisRaw("Horizontal");
-        Z_Axis = Input.GetAxisRaw("Vertical");
-        isWalk = Input.GetButton("Walk"); // 왼쪽 shift 키
+        // x와 z축은 키보드의 입력을 받아 결정되는 입력값
+        // y축은 수학적으로 계산되는 속도의 값
+        private float X_Axis;
+        private float Y_velocity;
+        private float Z_Axis;
+        private Vector3 horizontal;
+        private bool isWalk;
+        private bool isJump;
 
-        if (Input.GetButtonDown("Jump") && controller.isGrounded)
-            isJump = true;
-    }
+        private Dimension currentDimension;
 
-    /// 1. 입력받은 x와 z, Walk키에 따라 수평 속도를 결정한다
-    /// 2. Jump를 입력받았다면 y 속도를 점프 초기 속도로 초기화한다
-    /// 3. 최종 결정된 속도로 캐릭터를 한 프레임 이동시킨다
-    /// 4. 이동 후 캐릭터가 공중에 떠있다면 y 속도를 감소시키고
-    ///    착지했다면 그에 맞게 처리한다
-    /// 5. 애니메이션을 상황에 맞게 적절히 적용한다
-    void Move()
-    {
-        horizontal = (cameraRight * X_Axis + cameraForward * Z_Axis).normalized;
-        horizontal *= moveSpeed * (isWalk ? slowDownWhileWalk : 1f);
-
-        if (isJump)
+        void Awake()
         {
-            // 점프 초기 속도는 v^2 = 2gh에 의해 결정
-            Y_velocity = Mathf.Sqrt(-2f * jumpHeight * gravity);
-            isJump = false;
+            controller = GetComponent<CharacterController>();
+
+            if (animator == null)
+                animator = GetComponentInChildren<Animator>();
+
+            /// 쿼터뷰 느낌을 살리기 위해 카메라를 y축 기준 45도로 돌렸기 때문에,
+            /// 방향키 입력에 따른 움직임도 카메라를 따라 돌려야 한다.
+            /// 마우스로 카메라를 회전시키는 기능을 넣지 않기로 했으므로
+            /// 이 작업을 Awake에 해도 무방하지만,
+            /// 만약 기능을 넣게 된다면 실시간으로 카메라의 축을 받아야 하기 때문에
+            /// Move() 함수로 이 내용을 옮겨야 한다.
+            cameraForward = cameraTransform.forward;
+            cameraRight = cameraTransform.right;
+            
+            cameraForward.y = 0f;
+            cameraRight.y = 0f;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
         }
 
-        Vector3 velocity = horizontal + Vector3.up * Y_velocity;
-        controller.Move(velocity * Time.deltaTime);
-        
-        if (!controller.isGrounded)
-            Y_velocity += gravity * Time.deltaTime;
-        /// isGrounded가 true이면서 속도가 음수이다
-        /// = 착지했다
-        else if (Y_velocity < 0f)
-            /// 착지 후 미세하게 떠있는 것을 방지
-            /// 안정적으로 땅에 붙어있을 수 있게 한다
-            Y_velocity = -2f;
-        
-        animator.SetBool("isRun", horizontal != Vector3.zero);
-        animator.SetBool("isWalk", isWalk);
-        animator.SetBool("isInTheAir", !controller.isGrounded);
-    }
+        void Update()
+        {
+            GetInput();
+            Move();
+            Turn();
+        }
 
-    // 움직이고 있는 방향을 바라본다
-    // void Turn()
-    // {
-    //     // 움직이지 않았다면 Turn을 실행하지 않는다
-    //     if (horizontal == Vector3.zero)
-    //         return;
+        // 이동에 필요한 키를 입력받는다
+        void GetInput()
+        {
+            X_Axis = Input.GetAxisRaw("Horizontal");
+            Z_Axis = Input.GetAxisRaw("Vertical");
+            isWalk = Input.GetButton("Walk"); // 왼쪽 shift 키
 
-    //     /// 참고 : horizontal은 speed가 곱해진 값이다
-    //     /// 즉 플레이어가 멀리 있는 지점을 바라보기 때문에
-    //     /// 경사를 오르는 상황에서는 예기치 못한 오류가 발생할 수 있다.
-    //     /// 버그가 발생한다면 speed가 곱해지기 전의 값을 가져올 것
-    //     transform.LookAt(transform.position + horizontal);
-    // }
+            if (Input.GetButtonDown("Jump") && controller.isGrounded)
+                isJump = true;
+        }
 
-    void Turn()
-    {
-        // 입력이 없으면 회전하지 않음 (horizontal이 아니라 입력을 직접 확인)
-        if (X_Axis == 0f && Z_Axis == 0f)
-            return;
+        /// 1. 입력받은 x와 z, Walk키에 따라 수평 속도를 결정한다
+        /// 2. Jump를 입력받았다면 y 속도를 점프 초기 속도로 초기화한다
+        /// 3. 최종 결정된 속도로 캐릭터를 한 프레임 이동시킨다
+        /// 4. 이동 후 캐릭터가 공중에 떠있다면 y 속도를 감소시키고
+        ///    착지했다면 그에 맞게 처리한다
+        /// 5. 애니메이션을 상황에 맞게 적절히 적용한다
+        void Move()
+        {
+            horizontal = (cameraRight * X_Axis + cameraForward * Z_Axis).normalized;
+            horizontal *= moveSpeed * (isWalk ? slowDownWhileWalk : 1f);
 
-        Vector3 lookDir = horizontal;
-        lookDir.y = 0f;                          // y 성분 확실히 제거
-        if (lookDir.sqrMagnitude < 0.0001f)      // 0벡터 방어
-            return;
+            if (isJump)
+            {
+                // 점프 초기 속도는 v^2 = 2gh에 의해 결정
+                Y_velocity = Mathf.Sqrt(-2f * jumpHeight * gravity);
+                isJump = false;
+            }
 
-        transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+            Vector3 velocity = horizontal + Vector3.up * Y_velocity;
+            controller.Move(velocity * Time.deltaTime);
+            
+            if (!controller.isGrounded)
+                Y_velocity += gravity * Time.deltaTime;
+            /// isGrounded가 true이면서 속도가 음수이다
+            /// = 착지했다
+            else if (Y_velocity < 0f)
+                /// 착지 후 미세하게 떠있는 것을 방지
+                /// 안정적으로 땅에 붙어있을 수 있게 한다
+                Y_velocity = -2f;
+            
+            animator.SetBool("isRun", horizontal != Vector3.zero);
+            animator.SetBool("isWalk", isWalk);
+            animator.SetBool("isInTheAir", !controller.isGrounded);
+        }
+
+        // 움직이고 있는 방향을 바라본다
+        // void Turn()
+        // {
+        //     // 움직이지 않았다면 Turn을 실행하지 않는다
+        //     if (horizontal == Vector3.zero)
+        //         return;
+
+        //     /// 참고 : horizontal은 speed가 곱해진 값이다
+        //     /// 즉 플레이어가 멀리 있는 지점을 바라보기 때문에
+        //     /// 경사를 오르는 상황에서는 예기치 못한 오류가 발생할 수 있다.
+        //     /// 버그가 발생한다면 speed가 곱해지기 전의 값을 가져올 것
+        //     transform.LookAt(transform.position + horizontal);
+        // }
+
+        void Turn()
+        {
+            // 입력이 없으면 회전하지 않음 (horizontal이 아니라 입력을 직접 확인)
+            if (X_Axis == 0f && Z_Axis == 0f)
+                return;
+
+            Vector3 lookDir = horizontal;
+            lookDir.y = 0f;                          // y 성분 확실히 제거
+            if (lookDir.sqrMagnitude < 0.0001f)      // 0벡터 방어
+                return;
+
+            transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+        }
     }
 }
