@@ -51,6 +51,12 @@ namespace Squad
         // DetectVision을 한번 수행한 후, 해당 결과를 다음 수행까지 기억하는 역할
         private bool visibleJustBefore;
 
+        // 1. 플레이어가 같은 차원에 있는가?
+        private bool IsInSameDimension()
+        {
+            return myDimension
+        }
+
         // 1. 플레이어가 감지 거리 안에 있는가?
         private bool IsInViewDistance(Transform target)
         {

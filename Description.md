@@ -209,17 +209,9 @@ ReportSound는 조사된 소리를 받았으므로 아무것도 하지 않음
 
 만들 조각들
 
-1. 차원 표시 — Dimension enum + DimensionMember
+1. 차원 표시 — Dimension enum + DimensionMember (완료)
 
-DimensionMember는 "이 오브젝트는 어느 차원 소속인가"만 들고 있는 아주 작은 컴포넌트입니다. 적, 발전기, 차원별 벽에 붙일 거고요.
-
-인스펙터에서 지정하고 밖에서 읽기만 하면 되니, 앞서 Sound에서 쓴 구조와 같습니다 — 값은 SerializeField, 읽기는 프로퍼티로.
-
-2. 플레이어의 차원 — Player에 상태 추가
-
-플레이어는 차원이 바뀌니 DimensionMember와 성격이 다릅니다. 인스펙터 고정값이 아니라 런타임에 변하는 상태죠.
-
-그리고 바뀌는 순간에 뭔가 해야 합니다(보이는 것 갱신). 그래서 단순 필드보다 "전환 함수"가 필요할 겁니다.
+2. 플레이어의 차원 — Player에 상태 추가 (완료)
 
 3. 감지 관문 — VisionCensor
 
