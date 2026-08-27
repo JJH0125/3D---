@@ -47,7 +47,7 @@ namespace Squad
         private bool isWalk;
         private bool isJump;
 
-        private Dimension currentDimension;
+        private Dimension myDimension;
 
         void Awake()
         {
@@ -55,6 +55,8 @@ namespace Squad
 
             if (animator == null)
                 animator = GetComponentInChildren<Animator>();
+
+            myDimension = Real;
 
             /// 쿼터뷰 느낌을 살리기 위해 카메라를 y축 기준 45도로 돌렸기 때문에,
             /// 방향키 입력에 따른 움직임도 카메라를 따라 돌려야 한다.
@@ -83,7 +85,7 @@ namespace Squad
         {
             X_Axis = Input.GetAxisRaw("Horizontal");
             Z_Axis = Input.GetAxisRaw("Vertical");
-            isWalk = Input.GetButton("Walk"); // 왼쪽 shift 키
+            isWalk = Input.GetButton("Walk"); // 왼쪽 SHIFT 키
 
             if (Input.GetButtonDown("Jump") && controller.isGrounded)
                 isJump = true;
@@ -150,6 +152,14 @@ namespace Squad
                 return;
 
             transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+        }
+
+        public void ChangePlayerDimension()
+        {
+            if (myDimension == Real)
+                myDimension = Fake;
+            else
+                myDimension = Real;
         }
     }
 }

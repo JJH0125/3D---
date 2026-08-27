@@ -9,16 +9,14 @@ f/g/h 비용
 heapindex
 
 2. NodeHeap.cs
-Node를 담는 Heap을 관리하는 클래스.
-
 Add : 노드 추가
 RemoveFirst : 0번 인덱스의 노드 제거하여 return
 UpdateItem : 해당 노드를 맞는 위치에 정렬
 Contains : heap에 해당 노드가 있는지
+Node를 담는 Heap을 관리하는 클래스.
 
 3. PathGrid.cs
 월드를 XZ 평면 위의 격자 노드들로 쪼개고, 각 칸이 walkable한지 판정해서 들고 있는 클래스.
-
 BuildGrid : 격자 크기를 계산하고 Physics.CheckBox로 각 칸의 장애물 여부를 검사해 Node 배열을 채운다. Awake에서 자동 호출.
 NodeFromWorldPoint : 월드 좌표가 속한 Node를 반환. Pathfinder.FindPath와 IsWalkable에서 참조.
 GetNeighbors : 어떤 노드의 이동 가능한 이웃 노드들을 반환(대각선 코너컷 방지 포함). Pathfinder.FindPath에서 참조.
@@ -27,12 +25,19 @@ OnDrawGizmos : Scene 뷰에서 격자와 DebugPath를 색으로 시각화.
 
 4. Pathfinder.cs
 PathGrid 위에서 그리드 A*를 돌려 실제 경로(월드 좌표 리스트)를 계산하는 클래스.
-
 IsWalkable : PathGrid.IsWalkable을 그대로 전달하는 래퍼. ChaserLocomotion.GetWanderTarget에서 참조.
-FindPath : 시작~목표 사이 A* 탐색 후 waypoint 리스트 반환. ChaserLocomotion.MoveTo에서 참조.
+FindPath : 시작~목표 사이 A* 탐색 후 waypoint 리스트 반환. ChaserLocomotion.MoveTo, (구버전)ChaserAgent.RequestPath에서 참조.
 Heuristic : 대각선 거리 기반 휴리스틱 비용 계산. FindPath 내부에서만 사용.
 Distance : 인접 노드 사이 실제 이동 비용(직선 10 / 대각선 14). FindPath 내부에서만 사용.
 RetracePath : 목표 노드에서 Parent를 거슬러 경로를 역추적하고 PathGrid.DebugPath에 기록, waypoint 리스트로 변환. FindPath 내부에서만 사용.
+
+5. ChaserAgent.cs (Astar3D, ⚠ CLAUDE.md 기준 deprecated — ChaserLocomotion + HorrorChaserAgent로 대체되어 제거 예정)
+GOAP 없이 순수 A* 길찾기만 확인하려고 만든 테스트용 추격자 이동 스크립트. 실제 게임 로직에서는 쓰이지 않는다.
+Awake : Rigidbody, Pathfinder 참조 캐싱.
+Update : 재계산 타이머와 타겟 이동량을 검사해 RequestPath 호출 여부 결정.
+FixedUpdate : 매 물리 프레임 FollowPath 호출.
+RequestPath : Pathfinder.FindPath로 새 경로를 계산. Update에서 참조.
+FollowPath : 경로를 waypoint 단위로 따라가며 Rigidbody를 이동/회전. FixedUpdate에서 참조.
 
 ── Detection ──
 
@@ -184,5 +189,55 @@ IsInLayerMask : 레이어가 LayerMask에 포함되는지 비트 연산으로 �
 Activate : 발전기를 켜고 타이머를 초기화, 안내 문구를 숨긴다. Update에서 참조.
 Deactivate : 발전기를 끄고, 플레이어가 아직 범위 안이면 안내 문구를 다시 띄운다. 현재 이 스크립트 밖에서 호출하는 코드는 없음(외부 트리거용으로 열어 둔 공개 API).
 
-게임 시작 시
-Awake
+
+소리가 발생되는 과정
+(처음 듣는 소리)
+각 오브젝트의 스크립트가 Emit 호출
+Emit 함수는 ReportSound 호출
+ReportSound는 이미 조사된 소리가 아니라면 board를 업데이트하여 적이 조사하게끔 유발
+적은 조사한 후 AddInvestigateCompleted 호출
+AddInvestigateCompleted는 board를 업데이트하여 조사된 소리 관리
+(이미 들었던 소리)
+Emit 호출
+ReportSound 호출
+ReportSound는 조사된 소리를 받았으므로 아무것도 하지 않음
+
+
+
+차원 이동 구현
+차원은 AlertLevel과 같이 각자 고유한 데이터를 가진 것이 아닌, 이름표일 뿐이므로 enum으로 손쉽게 정의 및 관리가 가능.
+
+만들 조각들
+
+1. 차원 표시 — Dimension enum + DimensionMember
+
+DimensionMember는 "이 오브젝트는 어느 차원 소속인가"만 들고 있는 아주 작은 컴포넌트입니다. 적, 발전기, 차원별 벽에 붙일 거고요.
+
+인스펙터에서 지정하고 밖에서 읽기만 하면 되니, 앞서 Sound에서 쓴 구조와 같습니다 — 값은 SerializeField, 읽기는 프로퍼티로.
+
+2. 플레이어의 차원 — Player에 상태 추가
+
+플레이어는 차원이 바뀌니 DimensionMember와 성격이 다릅니다. 인스펙터 고정값이 아니라 런타임에 변하는 상태죠.
+
+그리고 바뀌는 순간에 뭔가 해야 합니다(보이는 것 갱신). 그래서 단순 필드보다 "전환 함수"가 필요할 겁니다.
+
+3. 감지 관문 — VisionCensor
+
+지금 거리·각도·차폐 세 조건을 &&로 엮고 있죠. 거기에 "같은 차원인가"를 하나 더 넣습니다.
+
+앞서 정한 대로 가장 싼 검사를 앞에 두면 되고요.
+
+4. 보이는 것 — 렌더러 켜고 끄기
+
+플레이어 차원이 바뀔 때, 다른 차원 오브젝트의 렌더러를 끕니다. 로직은 살려두고 그리기만 멈추는 거죠.
+
+이걸 누가 관리할지가 판단 지점입니다. 각 DimensionMember가 스스로 판단할 수도 있고, 어딘가 관리자가 일괄 처리할 수도 있어요.
+
+5. 전환 존
+
+발전기와 거의 같은 구조입니다. 트리거 콜라이더, InteractionPrompt, 키 입력. 앞서 만든 걸 그대로 재사용할 수 있죠.
+
+Player와 ChaserContext에 myDimension이라는 이름의 Dimension 타입의 필드를 추가하고, Player의 Awake에 myDimension을 Real로 초기화하는 코드를 작성한다.
+HorrorChaserAgent의 Start 함수에서 ctx를 생성하는 부분에도 myDimension을 Real로 초기화하게 한다. (나중에 Fake 차원에서도 적이 존재할 예정이지만 일단은 항상 Real로 초기화되게 함)
+DimensionController를 추가하여 각 Dimension에 속하는 플레이어 또는 적 오브젝트를 HashSet에 모아놓는다.
+DimensionChanger 오브젝트를 추가한다. 발전기와 유사하게 플레이어가 가까이 다가가면 Text가 출력된다. 버튼을 누르면, Changer는 플레이어가 어느 차원에 속하는지 Controller에게서 답을 얻은 후 Player 안의 ChangeDimension 함수를 호출한다
