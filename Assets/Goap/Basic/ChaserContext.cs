@@ -5,9 +5,8 @@ using UnityEngine;
 namespace Squad
 {
     /// <summary>
-    /// 추격자의 GOAP가 동작하는 데 필요한 여러 정보를
+    /// ChaserAction이 동작하는 데 필요한 정보를
     /// 하나로 묶어 전달하는 정보 꾸러미.
-    /// ChaserActions와 Planner가 이 정보들을 단위로 움직인다.
     /// </summary>
     public class ChaserContext
     {
