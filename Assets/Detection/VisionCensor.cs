@@ -14,7 +14,6 @@ namespace Squad
         /// 
         [Header("■ 필수 연결 — 비워두면 에러")]
         [Tooltip("플레이어")]
-        [SerializeField] private Player _player;
         [SerializeField] private Transform player;
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
