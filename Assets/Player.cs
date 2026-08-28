@@ -44,6 +44,7 @@ public class Player : MonoBehaviour
     private Vector3 horizontal;
     private bool isWalk;
     private bool isJump;
+    private Dimension myDimension;
 
     void Awake()
     {
@@ -51,6 +52,8 @@ public class Player : MonoBehaviour
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+
+        myDimension = Dimension.Real;
 
         /// 쿼터뷰 느낌을 살리기 위해 카메라를 y축 기준 45도로 돌렸기 때문에,
         /// 방향키 입력에 따른 움직임도 카메라를 따라 돌려야 한다.
@@ -146,5 +149,16 @@ public class Player : MonoBehaviour
             return;
 
         transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+    }
+
+    /// 현재 플레이어의 차원을 다른 차원으로 변경
+    public Dimension SwitchMyDimension()
+    {
+        if (myDimension == Dimension.Real)
+            myDimension = Dimension.Fake;
+        else
+            myDimension = Dimension.Real;
+            
+        return myDimension;
     }
 }
