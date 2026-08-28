@@ -13,9 +13,8 @@ namespace Squad
     {
         private Player player;
         private List<DimensionMember> enemies;
-        private Dimension dimension;
 
-        void Awake()
+        void Start()
         {
             player = FindObjectOfType<Player>();
             enemies = new List<DimensionMember>();
@@ -24,7 +23,7 @@ namespace Squad
 
         public void SwitchPlayerDimension()
         {
-            dimension = player.SwitchMyDimension();
+            Dimension dimension = player.SwitchMyDimension();
             
             foreach (var enemy in enemies)
             {

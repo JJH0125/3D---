@@ -55,7 +55,7 @@ namespace Squad
         // 1. 플레이어가 같은 차원에 있는가?
         private bool IsInSameDimension(Transform target)
         {
-            return true;
+            return true; // 구현해야 함!
         }
 
         // 2. 플레이어가 감지 거리 안에 있는가?
