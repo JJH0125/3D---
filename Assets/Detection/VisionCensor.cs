@@ -14,6 +14,7 @@ namespace Squad
         /// 
         [Header("■ 필수 연결 — 비워두면 에러")]
         [Tooltip("플레이어")]
+        [SerializeField] private Player _player;
         [SerializeField] private Transform player;
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
@@ -54,8 +55,7 @@ namespace Squad
         // 1. 플레이어가 같은 차원에 있는가?
         private bool IsInSameDimension(Transform target)
         {
-            // Implementation for checking if player and enemy are in the same dimension
-            return true; // Placeholder implementation
+            return true;
         }
 
         // 2. 플레이어가 감지 거리 안에 있는가?

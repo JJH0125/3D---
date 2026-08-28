@@ -19,6 +19,7 @@ namespace Squad
         {
             player = FindObjectOfType<Player>();
             enemies = new List<DimensionMember>();
+            enemies.AddRange(FindObjectsOfType<DimensionMember>());
         }
 
         public void SwitchPlayerDimension()
@@ -27,10 +28,10 @@ namespace Squad
             
             foreach (var enemy in enemies)
             {
-                if (enemy.Dimension != dimension)
-                    enemy.Renderer.enabled = false;
-                else
+                if (enemy.Dimension == dimension)
                     enemy.Renderer.enabled = true;
+                else
+                    enemy.Renderer.enabled = false;
             }
         }
     }    
