@@ -1,7 +1,8 @@
 {
-  "files.exclude": {
-    "**/*.meta": true,
-    "**/Library": true,
-    "**/Temp": true
-  }
+    "files.exclude": {
+        "**/*.meta": true,
+        "**/Library": true,
+        "**/Temp": true
+    },
+    "dotnet.defaultSolution": "3D 연습.slnx"
 }

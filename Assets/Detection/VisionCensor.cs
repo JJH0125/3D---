@@ -52,12 +52,13 @@ namespace Squad
         private bool visibleJustBefore;
 
         // 1. 플레이어가 같은 차원에 있는가?
-        private bool IsInSameDimension()
+        private bool IsInSameDimension(Transform target)
         {
-            return myDimension
+            // Implementation for checking if player and enemy are in the same dimension
+            return true; // Placeholder implementation
         }
 
-        // 1. 플레이어가 감지 거리 안에 있는가?
+        // 2. 플레이어가 감지 거리 안에 있는가?
         private bool IsInViewDistance(Transform target)
         {
             Vector3 flatSelf = transform.position;
@@ -67,7 +68,7 @@ namespace Squad
             return Vector3.Distance(flatSelf, flatTarget) <= viewDistance;
         }
 
-        // 2. 플레이어가 적의 시야각 안에 있는가?
+        // 3. 플레이어가 적의 시야각 안에 있는가?
         private bool IsInViewAngle(Transform target)
         {
             // 적 위치 기준 플레이어의 위치를 나타내는 벡터
@@ -86,7 +87,7 @@ namespace Squad
             return angle <= viewAngle * 0.5f;
         }
 
-        // 3. 적과 플레이어 사이에 벽이나 장애물이 없는가?
+        // 4. 적과 플레이어 사이에 벽이나 장애물이 없는가?
         private bool HasLineOfSight(Transform target)
         {
             Vector3 eyePosition = transform.position + Vector3.up * eyeHeight;
@@ -120,10 +121,11 @@ namespace Squad
             return true;
         }
 
-        // 1 ~ 3 조건 검사를 한 흐름으로
+        // 1 ~ 4 조건 검사를 한 흐름으로
         private void DetectVision(Transform target)
         {
-            bool canSee = IsInViewDistance(target)
+            bool canSee = IsInSameDimension(target)
+            && IsInViewDistance(target)
             && IsInViewAngle(target)
             && HasLineOfSight(target);
 
