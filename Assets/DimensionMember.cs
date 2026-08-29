@@ -19,5 +19,16 @@ namespace Squad
 
         public MeshRenderer Renderer => meshRenderer;
         public Dimension Dimension => dimension;
+
+        public void ToggleRenderer()
+        {
+            if (meshRenderer != null)
+            {
+                if (meshRenderer.enabled == true)
+                    meshRenderer.enabled = false;
+                else
+                    meshRenderer.enabled = true;
+            }
+        }
     }
 }

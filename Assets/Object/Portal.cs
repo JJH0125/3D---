@@ -17,7 +17,7 @@ namespace Squad
         // 작동시킬 수 있는 범위 내에 플레이어가 들어와있는지 여부.
         private bool _playerInRange;
 
-        void Start() => dimensionController = FindObjectOfType<DimensionController>();
+        void Start() => dimensionController = DimensionController.Instance;
 
         void Update()
         {

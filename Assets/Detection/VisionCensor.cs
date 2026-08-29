@@ -33,8 +33,11 @@ namespace Squad
         [SerializeField] private float detectInterval = 0.4f;
 
         private float _detectTimer;
+        private DimensionController dimensionController;
 
-        private void Update()
+        void Start() => dimensionController = DimensionController.Instance;
+
+        void Update()
         {
             if (player == null)
                 return;
@@ -54,7 +57,7 @@ namespace Squad
         // 1. 플레이어가 같은 차원에 있는가?
         private bool IsInSameDimension(Transform target)
         {
-            return true; // 구현해야 함!
+            return true;
         }
 
         // 2. 플레이어가 감지 거리 안에 있는가?

@@ -14,8 +14,19 @@ namespace Squad
         private Player player;
         private List<DimensionMember> enemies;
 
+        public static DimensionController Instance { get; private set; }
+
         void Start()
         {
+            // 기존에 있던 DimensionController Instance 제거
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
+
             player = FindObjectOfType<Player>();
             enemies = new List<DimensionMember>();
             enemies.AddRange(FindObjectsOfType<DimensionMember>());
@@ -26,12 +37,7 @@ namespace Squad
             Dimension dimension = player.SwitchMyDimension();
             
             foreach (var enemy in enemies)
-            {
-                if (enemy.Dimension == dimension)
-                    enemy.Renderer.enabled = true;
-                else
-                    enemy.Renderer.enabled = false;
-            }
+                enemy.ToggleRenderer();
         }
     }    
 }
