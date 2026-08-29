@@ -17,8 +17,17 @@ namespace Squad
         [Tooltip("적이 속한 차원")]
         [SerializeField] private Dimension dimension;
 
+        private DimensionController dimensionController;
+
         public MeshRenderer Renderer => meshRenderer;
         public Dimension Dimension => dimension;
+
+        void Start()
+        {
+            dimensionController = DimensionController.Instance;
+            if (dimensionController != null)
+                dimensionController.enemies.Add(this);
+        }
 
         public void ToggleRenderer()
         {

@@ -54,10 +54,17 @@ namespace Squad
         // DetectVision을 한번 수행한 후, 해당 결과를 다음 수행까지 기억하는 역할
         private bool visibleJustBefore;
 
-        // 1. 플레이어가 같은 차원에 있는가?
-        private bool IsInSameDimension(Transform target)
+        // 1. 플레이어가 같은 차원에 있는가? (Transform만으로는 알 수 없고, DimensionMember를 통해 확인)
+        private bool IsInSameDimension()
         {
-            return true;
+            if (dimensionController != null)
+            {
+                DimensionMember enemy = GetComponent<DimensionMember>();
+                if (enemy != null)
+                    return dimensionController.CompareDimension(enemy);
+            }
+
+            return false;
         }
 
         // 2. 플레이어가 감지 거리 안에 있는가?
@@ -126,7 +133,7 @@ namespace Squad
         // 1 ~ 4 조건 검사를 한 흐름으로
         private void DetectVision(Transform target)
         {
-            bool canSee = IsInSameDimension(target)
+            bool canSee = IsInSameDimension()
             && IsInViewDistance(target)
             && IsInViewAngle(target)
             && HasLineOfSight(target);

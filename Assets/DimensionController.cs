@@ -12,11 +12,11 @@ namespace Squad
     public class DimensionController : MonoBehaviour
     {
         private Player player;
-        private List<DimensionMember> enemies;
+        public HashSet<DimensionMember> enemies;
 
         public static DimensionController Instance { get; private set; }
 
-        void Start()
+        void Awake()
         {
             // 기존에 있던 DimensionController Instance 제거
             if (Instance != null && Instance != this)
@@ -28,13 +28,20 @@ namespace Squad
             Instance = this;
 
             player = FindObjectOfType<Player>();
-            enemies = new List<DimensionMember>();
-            enemies.AddRange(FindObjectsOfType<DimensionMember>());
+            enemies = new HashSet<DimensionMember>();
+        }
+
+        public bool CompareDimension(DimensionMember enemy)
+        {
+            if (player == null || enemy == null)
+                return false;
+
+            return player.myDimension == enemy.Dimension;
         }
 
         public void SwitchPlayerDimension()
         {
-            Dimension dimension = player.SwitchMyDimension();
+            player.SwitchMyDimension();
             
             foreach (var enemy in enemies)
                 enemy.ToggleRenderer();

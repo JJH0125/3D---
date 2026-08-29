@@ -250,19 +250,14 @@ Player :
 플레이어가 가진 차원을 바꾸는 함수 추가
 호출하는 주체는 컨트롤러.
 
-VisionCensor :
-플레이어가 같은 차원에 존재하는가를 최우선으로 검사하도록 DetectVision 함수를 수정
-플레이어의 transform을 받고 검사하여 bool 형태를 반환하는 함수는 아직 구현하지 못했음
-(transform을 받아서 될 일이 아닐 수도?)
--> DimensionController가 알고 있으니 컨트롤러에게 묻는 방법이 좋을 듯
-
 문제 1 (완)
 DimensionController를 싱글톤으로 만들고
 컨트롤러를 참고하는 Portal, VisionCensor에서 Instance를 호출하도록 수정해야 함
 
-문제 2
+문제 2 (완)
 컨트롤러가 플레이어의 차원을 바꿀 때 불필요한 dimension 필드가 사용되고 있음
-컨트롤러가 이 필드를 가질 필요가 있을까? 플레이어에게 물어보는 게 좋을 듯
+컨트롤러가 이 필드를 가질 필요가 있을까?
+-> Player의 SwitchMyDimension을 void로 바꿈. 컨트롤러에서는 따로 자신의 필드에 무언가를 받지 않고 플레이어에 명령만 내림.
 
 문제 3
 게임이 시작됐을 때 렌더러들의 정리가 필요함. 지금은 차원이 바뀔 때만 렌더러가 정리되고 있음
@@ -270,5 +265,9 @@ DimensionController를 싱글톤으로 만들고
 문제 4 (완)
 적의 렌더러를 바꾸는 것을 컨트롤러가 직접 할 필요가 있을까? member에서 알아서 하라고 하면 될 듯
 
-문제 5
+문제 5 (완)
 IsInSameDimension 구현. 컨트롤러에게 차원 정보들을 받아오는 편이 좋을 듯
+-> Transform만으로는 알 수 없기에 parameter는 따로 두지 않음.
+GetComponent로 해당 적 개체의 member를 가져와서, 컨트롤러에 비교해달라고 요청
+컨트롤러는 플레이어의 차원과 (get; private set; 을 통해 컨트롤러에서도 알 수 있음)
+요청받은 member의 차원을 비교하여 bool 값을 센서에 전달

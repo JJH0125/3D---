@@ -44,7 +44,7 @@ public class Player : MonoBehaviour
     private Vector3 horizontal;
     private bool isWalk;
     private bool isJump;
-    private Dimension myDimension;
+    public Dimension myDimension { get; private set; }
 
     void Awake()
     {
@@ -152,13 +152,11 @@ public class Player : MonoBehaviour
     }
 
     /// 현재 플레이어의 차원을 다른 차원으로 변경
-    public Dimension SwitchMyDimension()
+    public void SwitchMyDimension()
     {
         if (myDimension == Dimension.Real)
             myDimension = Dimension.Fake;
         else
             myDimension = Dimension.Real;
-            
-        return myDimension;
     }
 }
