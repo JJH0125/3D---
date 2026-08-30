@@ -34,8 +34,13 @@ namespace Squad
 
         private float _detectTimer;
         private DimensionController dimensionController;
+        private DimensionMember enemy;
 
-        void Start() => dimensionController = DimensionController.Instance;
+        void Start()
+        {
+            dimensionController = DimensionController.Instance;
+            enemy = GetComponent<DimensionMember>();
+        }
 
         void Update()
         {
@@ -54,15 +59,11 @@ namespace Squad
         // DetectVision을 한번 수행한 후, 해당 결과를 다음 수행까지 기억하는 역할
         private bool visibleJustBefore;
 
-        // 1. 플레이어가 같은 차원에 있는가? (Transform만으로는 알 수 없고, DimensionMember를 통해 확인)
+        // 1. 플레이어가 같은 차원에 있는가? (Transform으로 알 수는 없고, DimensionMember를 통해 확인)
         private bool IsInSameDimension()
         {
-            if (dimensionController != null)
-            {
-                DimensionMember enemy = GetComponent<DimensionMember>();
-                if (enemy != null)
-                    return dimensionController.CompareDimension(enemy);
-            }
+            if (dimensionController != null && enemy != null)
+                return dimensionController.CompareDimension(enemy);
 
             return false;
         }

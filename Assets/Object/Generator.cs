@@ -44,9 +44,13 @@ namespace Squad
 
         private void Update()
         {
-            // 범위 안 + 아직 안 켜짐 + 키 입력 → 작동
+            // 범위 안 + 아직 안 켜짐 + 키 입력 → 켜기
             if (_playerInRange && !IsActive && Input.GetKeyDown(interactKey))
                 Activate();
+
+            // (디버깅 전용) 범위 안 + 켜짐 + 키 입력 → 끄기
+            if (_playerInRange && IsActive && Input.GetKeyDown(interactKey))
+                Deactivate();
 
             if (!IsActive)
                 return;

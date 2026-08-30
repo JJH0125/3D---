@@ -26,15 +26,21 @@ namespace Squad
             }
 
             Instance = this;
-
             player = FindObjectOfType<Player>();
             enemies = new HashSet<DimensionMember>();
         }
 
+        /// <summary>
+        /// 적들이 자기 자신을 컨트롤러에 등록하도록 하는 함수
+        /// </summary>
+        /// <param name="enemy"></param>
         public void AddEnemy(DimensionMember enemy)
         {
             if (enemy != null)
+            {
                 enemies.Add(enemy);
+                enemy.SetRenderer(CompareDimension(enemy));
+            }
         }
 
         public bool CompareDimension(DimensionMember enemy)
@@ -42,6 +48,7 @@ namespace Squad
             if (player == null || enemy == null)
                 return false;
 
+            Debug.Log($"플레이어 차원: {player.myDimension}, 적 차원: {enemy.Dimension}, 결과 : {player.myDimension == enemy.Dimension}");
             return player.myDimension == enemy.Dimension;
         }
 
@@ -50,7 +57,7 @@ namespace Squad
             player.SwitchMyDimension();
             
             foreach (var enemy in enemies)
-                enemy.SetRenderer();
+                enemy.SetRenderer(CompareDimension(enemy));
         }
     }    
 }

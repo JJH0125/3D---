@@ -8,7 +8,7 @@ namespace Squad
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage = "[E] 차원 이동";
+        [SerializeField] private string promptMessage = "[E] Dimension Convert";
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
@@ -38,6 +38,7 @@ namespace Squad
         {
             if (!IsInLayerMask(other.gameObject.layer, playerLayer))
                 return;
+            
             _playerInRange = false;
             HidePrompt();
         }

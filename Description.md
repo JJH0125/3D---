@@ -285,3 +285,16 @@ DimensionMember.ToggleRenderer()이 Renderer 자기 자신만 보고 켜고 끄�
 
 enemies가 public이어어서 캡슐화 관점에서 아쉬운 요소.
 -> private으로 바꾸고 컨트롤러에 멤버를 추가하는 public 함수 추가
+
+IsInSameDimension이 Update마다 GetComponent하는 문제
+-> GetComponent는 Censor의 Start에서 한번만 하는 것으로 수정
+
+4차 작업
+현재 구조가
+Controller → Member (enemies에 담고 있음)
+Member → Controller (CompareDimension 호출)
+서로를 참조하는 구조 (되도록이면 피해야 할 점)
+대안 -> SetRenderer가 판단 결과를 받도록!
+컨트롤러가 비교하여 너 나타나/숨어 를 지시
+멤버는 받은 대로 렌더러만 처리
+요지는, 멤버가 컨트롤러를 모르게!

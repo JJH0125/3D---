@@ -16,25 +16,24 @@ namespace Squad
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("적이 속한 차원")]
         [SerializeField] private Dimension dimension;
-
-        private DimensionController dimensionController;
-
-        public MeshRenderer Renderer => meshRenderer;
         public Dimension Dimension => dimension;
 
         void Start()
         {
-            dimensionController = DimensionController.Instance;
+            // 컨트롤러는 Start에서 한번만 참고하고, 이후에는 몰라도 된다.
+            DimensionController dimensionController = DimensionController.Instance;
             if (dimensionController != null)
                 dimensionController.AddEnemy(this);
         }
 
-        /// 
-        public void SetRenderer()
+        /// <summary>
+        /// 적은 컨트롤러가 명령하는 대로 보이고 숨는다.
+        /// </summary>
+        public void SetRenderer(bool isVisible)
         {
             if (meshRenderer != null)
             {
-                if (dimensionController.CompareDimension(this))
+                if (isVisible)
                     meshRenderer.enabled = true;
                 else
                     meshRenderer.enabled = false;
