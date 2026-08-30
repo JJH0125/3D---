@@ -48,7 +48,6 @@ namespace Squad
             if (player == null || enemy == null)
                 return false;
 
-            Debug.Log($"플레이어 차원: {player.myDimension}, 적 차원: {enemy.Dimension}, 결과 : {player.myDimension == enemy.Dimension}");
             return player.myDimension == enemy.Dimension;
         }
 
