@@ -226,6 +226,8 @@ ReportSound는 조사된 소리를 받았으므로 아무것도 하지 않음
 
 발전기와 거의 같은 구조입니다. 트리거 콜라이더, InteractionPrompt, 키 입력. 앞서 만든 걸 그대로 재사용할 수 있죠.
 
+1차 작업
+
 새로 생성된 파일
 
 DimensionController : 빈 오브젝트를 만들어 컴포넌트로 추가.
@@ -250,6 +252,11 @@ Player :
 플레이어가 가진 차원을 바꾸는 함수 추가
 호출하는 주체는 컨트롤러.
 
+VisionCensor :
+차원을 검사하는 절차를 맨 먼저 밟도록 수정해야 함. 어떻게 수정할까?
+
+2차 작업
+
 문제 1 (완)
 DimensionController를 싱글톤으로 만들고
 컨트롤러를 참고하는 Portal, VisionCensor에서 Instance를 호출하도록 수정해야 함
@@ -271,3 +278,10 @@ IsInSameDimension 구현. 컨트롤러에게 차원 정보들을 받아오는 �
 GetComponent로 해당 적 개체의 member를 가져와서, 컨트롤러에 비교해달라고 요청
 컨트롤러는 플레이어의 차원과 (get; private set; 을 통해 컨트롤러에서도 알 수 있음)
 요청받은 member의 차원을 비교하여 bool 값을 센서에 전달
+
+3차 작업
+DimensionMember.ToggleRenderer()이 Renderer 자기 자신만 보고 켜고 끄고 있다
+-> 컨트롤러에 있는 Compare 함수 활용!
+
+enemies가 public이어어서 캡슐화 관점에서 아쉬운 요소.
+-> private으로 바꾸고 컨트롤러에 멤버를 추가하는 public 함수 추가

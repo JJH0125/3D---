@@ -11,8 +11,8 @@ namespace Squad
     /// </summary>
     public class DimensionController : MonoBehaviour
     {
-        private Player player;
-        public HashSet<DimensionMember> enemies;
+        public Player player { get; private set; }
+        private HashSet<DimensionMember> enemies;
 
         public static DimensionController Instance { get; private set; }
 
@@ -31,6 +31,12 @@ namespace Squad
             enemies = new HashSet<DimensionMember>();
         }
 
+        public void AddEnemy(DimensionMember enemy)
+        {
+            if (enemy != null)
+                enemies.Add(enemy);
+        }
+
         public bool CompareDimension(DimensionMember enemy)
         {
             if (player == null || enemy == null)
@@ -44,7 +50,7 @@ namespace Squad
             player.SwitchMyDimension();
             
             foreach (var enemy in enemies)
-                enemy.ToggleRenderer();
+                enemy.SetRenderer();
         }
     }    
 }

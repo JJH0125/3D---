@@ -26,17 +26,18 @@ namespace Squad
         {
             dimensionController = DimensionController.Instance;
             if (dimensionController != null)
-                dimensionController.enemies.Add(this);
+                dimensionController.AddEnemy(this);
         }
 
-        public void ToggleRenderer()
+        /// 
+        public void SetRenderer()
         {
             if (meshRenderer != null)
             {
-                if (meshRenderer.enabled == true)
-                    meshRenderer.enabled = false;
-                else
+                if (dimensionController.CompareDimension(this))
                     meshRenderer.enabled = true;
+                else
+                    meshRenderer.enabled = false;
             }
         }
     }
