@@ -90,7 +90,7 @@ namespace Squad
                 _replanTimer = replanInterval;
             }
 
-            // Advance the current action.
+            // 행동을 완료했으면 다음 행동으로
             if (_currentAction != null)
             {
                 bool done = _currentAction.Perform(_ctx);
