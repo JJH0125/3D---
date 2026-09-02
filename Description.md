@@ -298,3 +298,145 @@ IsInSameDimension이 Update마다 GetComponent하는 문제
 멤버는 받은 대로 렌더러만 처리
 요지는, 멤버가 컨트롤러를 모르게!
 
+Q: 내가 적의 WorldState에 대해서 제대로 이해하고 있는게 맞는지 모르겠는데, 게임이 시작되고 나서 적의 State는 비어있는 상태고, 소리를 한번이라도 듣는 순간 HeardSound 키가 생기고, 플레이어를 한번이라도 보는 순간 PlayerVisible이 생기는 구조 맞나?
+
+A: 아니요, 그렇지 않습니다. 매 재계획마다 새로 만들어집니다.
+실제 흐름
+BuildWorldState가 하는 일을 보면 명확합니다.
+
+Replan() 호출 (0.4초마다)
+  → BuildWorldState()
+      새 WorldState 객체 생성
+      블랙보드를 읽어서 fact들을 채움
+  → 이 상태로 계획 수립
+
+매번 새 WorldState를 만들고, 그 시점의 블랙보드를 스냅샷처럼 찍는 겁니다.
+
+키는 처음부터 있습니다
+
+BuildWorldState는 조건 없이 모든 fact를 채웁니다.
+
+playerVisible = (블랙보드 값)     ← true든 false든 항상 넣음
+heardSound    = (블랙보드 값)     ← 마찬가지
+
+그러니 게임 시작 직후에도 키는 다 있습니다. 값이 false일 뿐이죠.
+
+게임 시작
+→ WorldState: { playerVisible: false, heardSound: false, ... }
+
+"소리를 들으면 키가 생긴다"가 아니라, 키는 항상 있고 값이 바뀌는 구조입니다.
+
+누적되지 않습니다
+
+이게 중요한 지점입니다. WorldState는 기억이 아닙니다.
+
+0.0초: WorldState 생성 → { playerVisible: true }  → 사용 후 버림
+0.4초: WorldState 생성 → { playerVisible: false } → 사용 후 버림
+0.8초: WorldState 생성 → { playerVisible: false } → ...
+
+이전 상태를 이어받지 않고, 매번 처음부터 만듭니다.
+
+기억을 담당하는 건 블랙보드죠. 블랙보드가 PlayerCurrentlyVisible, HasSound, Alert 같은 걸 계속 들고 있고, WorldState는 그걸 매번 복사해 오는 겁니다.
+
+그럼 WorldState는 왜 있나
+
+*GOAP 플래너가 A 탐색을 하기 위한 재료**입니다.
+
+앞서 다룬 상태공간 A*를 떠올려보세요.
+
+현재 상태 → [행동 적용] → 새 상태 → [행동 적용] → ... → 목표 상태
+
+플래너는 이 탐색 과정에서 가상의 상태들을 계속 만들어냅니다.
+
+{ playerVisible: true, playerCaught: false }
+  → ReachPlayer 적용 (Effects: playerCaught = true)
+{ playerVisible: true, playerCaught: true }  ← 이건 상상 속의 상태
+  → 목표와 일치? → 계획 완성
+
+두 번째 상태는 실제로 일어난 게 아닙니다. "이 행동을 하면 이렇게 될 것"이라는 가정이죠.
+
+그래서 WorldState에 Clone()과 Apply()가 있는 겁니다. 원본을 복제해서 효과를 적용해보는 거죠.
+
+정리하면 역할이 다릅니다
+	블랙보드	WorldState
+성격	지속되는 기억	일회용 스냅샷
+수명	게임 내내	재계획 한 번
+누가 씀	감지가 쓰고 GOAP가 읽음	플래너가 탐색에 사용
+내용	실제 상황	실제 + 가상
+
+BuildWorldState는 둘 사이의 번역기입니다. "블랙보드의 언어"를 "플래너가 이해하는 fact"로 옮기는 거죠.
+
+B 방식 구현에 이게 왜 중요한가
+
+지금 하시려는 작업이 정확히 이 번역 지점에 손대는 겁니다.
+
+지금:    블랙보드 값을 그대로 옮김
+바꾸면:  옮기면서 "나에게 유효한가"를 거름
+
+WorldState가 매번 새로 만들어지니, 필터가 매 재계획마다 다시 적용됩니다. 차원이 바뀌면 다음 재계획(0.4초 이내)에 반영되죠.
+
+한 번 걸러진 게 남아 있을 걱정은 없습니다. 매번 새로 만드니까요.
+
+
+
+
+Q: private static bool Fact(WorldState s, string key)
+            => s.Facts.TryGetValue(key, out bool v) && v;
+그러면 GoalIsRelevant 함수에 쓰이는 이 Fact 함수는 s에 key가 있는지를 먼저 검사하고 그 다음에 key의 value가 true인지를 검사하는 거 아냐? key가 존재하지 않을 일이 없다면 key가 있는지 검사는 왜 하는 거지?
+
+A: 좋은 지적입니다. 지금 BuildWorldState가 만든 상태에 대해서는 그 검사가 불필요합니다. 모든 키를 항상 채우니까요.
+
+그런데 이 함수가 그렇게 생긴 이유가 있습니다.
+
+WorldState는 다른 데서도 만들어집니다
+앞서 얘기했듯, 플래너가 탐색하면서 가상의 상태를 계속 만들죠. 그리고 Goal의 Desired도 WorldState입니다.
+
+csharp
+// ChaserGoals에서
+catchPlayer.Desired.Facts["playerCaught"] = true;   // 키가 하나뿐
+목표는 "원하는 것"만 담습니다. playerVisible이나 heardSound는 안 들어 있죠. 앞서 Matches가 "goal의 fact만 검사한다"고 했던 게 이 때문입니다.
+
+이런 WorldState에 Fact(goal.Desired, "heardSound")를 부르면 키가 없습니다.
+
+없는 키를 그냥 읽으면
+csharp
+s.Facts["heardSound"]   // KeyNotFoundException 발생!
+Dictionary는 없는 키를 읽으면 예외를 던집니다. 게임이 멈추죠.
+
+TryGetValue는 그걸 막고 "없으면 false"로 처리합니다.
+
+의미상으로도 맞습니다
+GOAP에서 "키가 없다"와 "false"는 같은 뜻으로 취급하는 게 자연스럽습니다.
+
+heardSound가 없다  →  소리를 못 들었다  →  false
+"모르는 것은 참이 아니다"라는 규칙이죠. 이걸 closed-world assumption이라고 부릅니다. 자동 계획 분야에서 표준적인 가정입니다.
+
+그래서 이 한 줄이 두 가지를 동시에 합니다.
+
+예외 방지 (기술적)
+"없음 = 거짓" 규칙 표현 (의미적)
+앞서 다룬 것과 같은 맥락
+WorldState.Matches를 떠올려보세요.
+
+goal의 fact만 검사, 나머지는 무시
+goal에 없는 fact는 "상관없다"는 뜻이었죠. 여기 Fact도 같은 관용성을 갖는 겁니다.
+
+엔진이 특정 fact 집합을 전제하지 않는다는 설계예요. 앞서 "Goap.cs는 fact 이름을 모르는 범용 엔진"이라고 한 것과 이어집니다.
+
+그래서 지금은 불필요하지만
+말씀하신 대로, BuildWorldState가 만든 상태에서는 키가 항상 있으니 TryGetValue의 첫 검사가 매번 통과합니다.
+
+하지만 이 함수는 어떤 WorldState가 들어와도 안전하게 만들어졌습니다. 나중에 이런 일이 생겨도 안 깨지죠.
+
+fact를 조건부로만 채우는 경우
+플래너가 만든 중간 상태를 검사하는 경우
+goal의 Desired를 검사하는 경우
+성능은 무시할 수준
+혹시 그게 걱정이시라면, TryGetValue는 []와 거의 같은 비용입니다. 해시로 한 번 찾아보고 있으면 값을, 없으면 false를 반환하는 것뿐이죠.
+
+오히려 ContainsKey로 확인한 뒤 []로 읽으면 두 번 찾게 되어 느립니다. TryGetValue가 그걸 한 번에 하는 게 존재 이유고요.
+
+정리
+지금 상황에서는 방어적인 코드가 맞습니다. 다만 "왜 있는지 모르고 두는 것"과 "알고 두는 것"은 다르죠.
+
+알고 계시면 나중에 판단할 수 있습니다. 예를 들어 "fact를 조건부로 채우도록 바꾸자"고 할 때, 이 함수가 이미 대비되어 있다는 걸 아니까요.
