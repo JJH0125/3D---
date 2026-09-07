@@ -312,7 +312,7 @@ Replan() 호출 (0.4초마다)
 
 매번 새 WorldState를 만들고, 그 시점의 블랙보드를 스냅샷처럼 찍는 겁니다.
 
-키는 처음부터 있습니다
+키는 처음부터 있습니다 :
 
 BuildWorldState는 조건 없이 모든 fact를 채웁니다.
 
@@ -326,7 +326,7 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 "소리를 들으면 키가 생긴다"가 아니라, 키는 항상 있고 값이 바뀌는 구조입니다.
 
-누적되지 않습니다
+누적되지 않습니다 :
 
 이게 중요한 지점입니다. WorldState는 기억이 아닙니다.
 
@@ -338,7 +338,7 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 기억을 담당하는 건 블랙보드죠. 블랙보드가 PlayerCurrentlyVisible, HasSound, Alert 같은 걸 계속 들고 있고, WorldState는 그걸 매번 복사해 오는 겁니다.
 
-그럼 WorldState는 왜 있나
+그럼 WorldState는 왜 있나 :
 
 *GOAP 플래너가 A 탐색을 하기 위한 재료**입니다.
 
@@ -357,7 +357,7 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 그래서 WorldState에 Clone()과 Apply()가 있는 겁니다. 원본을 복제해서 효과를 적용해보는 거죠.
 
-정리하면 역할이 다릅니다
+정리하면 역할이 다릅니다 :
 	블랙보드	WorldState
 성격	지속되는 기억	일회용 스냅샷
 수명	게임 내내	재계획 한 번
@@ -366,7 +366,7 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 BuildWorldState는 둘 사이의 번역기입니다. "블랙보드의 언어"를 "플래너가 이해하는 fact"로 옮기는 거죠.
 
-B 방식 구현에 이게 왜 중요한가
+B 방식 구현에 이게 왜 중요한가 :
 
 지금 하시려는 작업이 정확히 이 번역 지점에 손대는 겁니다.
 
@@ -388,7 +388,7 @@ A: 좋은 지적입니다. 지금 BuildWorldState가 만든 상태에 대해서�
 
 그런데 이 함수가 그렇게 생긴 이유가 있습니다.
 
-WorldState는 다른 데서도 만들어집니다
+WorldState는 다른 데서도 만들어집니다 :
 앞서 얘기했듯, 플래너가 탐색하면서 가상의 상태를 계속 만들죠. 그리고 Goal의 Desired도 WorldState입니다.
 
 csharp
@@ -398,14 +398,14 @@ catchPlayer.Desired.Facts["playerCaught"] = true;   // 키가 하나뿐
 
 이런 WorldState에 Fact(goal.Desired, "heardSound")를 부르면 키가 없습니다.
 
-없는 키를 그냥 읽으면
+없는 키를 그냥 읽으면 :
 csharp
 s.Facts["heardSound"]   // KeyNotFoundException 발생!
 Dictionary는 없는 키를 읽으면 예외를 던집니다. 게임이 멈추죠.
 
 TryGetValue는 그걸 막고 "없으면 false"로 처리합니다.
 
-의미상으로도 맞습니다
+의미상으로도 맞습니다 :
 GOAP에서 "키가 없다"와 "false"는 같은 뜻으로 취급하는 게 자연스럽습니다.
 
 heardSound가 없다  →  소리를 못 들었다  →  false
