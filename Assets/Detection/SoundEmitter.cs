@@ -23,7 +23,7 @@ namespace Squad
             if (count == 0)
                 return;
 
-            SquadBlackboard.Instance.ReportSound(position, sound, source, dimension);
+            SquadBlackboard.Instance.ReportSound(position, sound, dimension, source);
         }
     }
 }

@@ -135,7 +135,7 @@ namespace Squad
             s.Facts["playerCaught"] = false;
 
             // Investigate-goal facts.
-            s.Facts["heardSound"] = bb.HasSound && IsInSameDimension();
+            s.Facts["heardSound"] = bb.HasSound && CanHearSoundNow();
             s.Facts["atSoundLocation"] = false;
             s.Facts["soundInvestigated"] = false;
 
@@ -200,8 +200,8 @@ namespace Squad
         /// BuildWorldState 함수를 보조하는 함수 (시야)
         private bool CanSeePlayerNow()
         {
-            if (dimensionController != null && enemy != null)
-                return dimensionController.CompareDimension(enemy);
+            if (DimensionController.Instance != null && enemy != null)
+                return DimensionController.Instance.CompareDimension(enemy);
 
             return false;
         }
