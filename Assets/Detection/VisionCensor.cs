@@ -56,7 +56,8 @@ namespace Squad
             }
         }
 
-        // DetectVision을 한번 수행한 후, 해당 결과를 다음 수행까지 기억하는 역할
+        /// DetectVision을 한번 수행한 후, 해당 결과를 다음 수행까지 기억하는 역할
+        /// 플레이어가 보이다가 막 사라졌을 때를 감지하기 위해 사용
         private bool visibleJustBefore;
 
         // 1. 플레이어가 같은 차원에 있는가? (Transform으로 알 수는 없고, DimensionMember를 통해 확인)

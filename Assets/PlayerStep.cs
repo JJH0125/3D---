@@ -73,7 +73,7 @@ namespace Squad
             _stepTimer -= Time.deltaTime;
             if (_stepTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, sound, enemyLayer);
+                SoundEmitter.Emit(transform.position, sound, enemyLayer, myDimension);
                 _stepTimer = interval;
             }
         }

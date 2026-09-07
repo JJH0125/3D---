@@ -52,10 +52,12 @@ namespace Squad
         private GoapAction _currentAction;
         private ChaserContext _ctx;
         private float _replanTimer;
+        private DimensionMember enemy;
 
         private void Awake()
         {
             Locomotion = GetComponent<ChaserLocomotion>();
+            enemy = GetComponent<DimensionMember>();
         }
 
         private void Start()
@@ -72,6 +74,7 @@ namespace Squad
                 WanderPauseMin = wanderPauseMin,
                 WanderPauseMax = wanderPauseMax,
             };
+
             // Action과 Goal 불러오기
             _actions = ChaserActions.Build();
             _goals = ChaserGoals.Build();
@@ -115,20 +118,24 @@ namespace Squad
             DoNextAction();
         }
 
-        /// <summary>
         /// 현재 추격자 입장에서의 WorldState 생성
-        /// </summary>
+        /// 존재할 수 있는 Key를 모두 생성한다.
+        /// playerVisible과 heardSound는 블랙보드에서 가져오고, 나머지는 false로 초기화한다.
+        ///
+        /// 9.6 수정: 블랙보드에서 가져온 시야와 소리 정보를 곧이곧대로 읽지 말고
+        /// 이 추격자 또한 보고 들을 수 있었던 정보인지를 한번 검사함으로써
+        /// 날 보지도 못하는 추격자가 날 인식하게 되는 버그를 수정.
         private WorldState BuildWorldState()
         {
             var bb = _ctx.Blackboard;
             var s = new WorldState();
 
             // Catch-goal facts.
-            s.Facts["playerVisible"] = bb.PlayerCurrentlyVisible;
+            s.Facts["playerVisible"] = bb.PlayerCurrentlyVisible && CanSeePlayerNow();
             s.Facts["playerCaught"] = false;
 
             // Investigate-goal facts.
-            s.Facts["heardSound"] = bb.HasSound;
+            s.Facts["heardSound"] = bb.HasSound && CanHearSoundNow();
             s.Facts["atSoundLocation"] = false;
             s.Facts["soundInvestigated"] = false;
 
@@ -189,6 +196,28 @@ namespace Squad
         /// </summary>
         private void DoNextAction() => _currentAction =
         (_plan != null && _plan.Count > 0) ? _plan.Dequeue() : null;
+
+        /// BuildWorldState 함수를 보조하는 함수 (시야)
+        private bool CanSeePlayerNow()
+        {
+            if (dimensionController != null && enemy != null)
+                return dimensionController.CompareDimension(enemy);
+
+            return false;
+        }
+
+        /// BuildWorldState 함수를 보조하는 함수 (소리)
+        private bool CanHearSoundNow()
+        {
+            /// 들은 소리가 발전기라면
+            if (_ctx.Blackboard.SoundDimension == null)
+                return true;
+            /// 그건 아니지만 같은 차원에서 난 소리라면
+            else if (_ctx.Blackboard.SoundDimension == enemy.dimension)
+                return true;
+                
+            return false;
+        }
 
         // 시각화 함수
         private void OnDrawGizmos()
