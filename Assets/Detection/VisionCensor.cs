@@ -61,7 +61,7 @@ namespace Squad
         private bool visibleJustBefore;
 
         // 1. 플레이어가 같은 차원에 있는가? (Transform으로 알 수는 없고, DimensionMember를 통해 확인)
-        private bool IsInSameDimension()
+        public bool IsInSameDimension()
         {
             if (dimensionController != null && enemy != null)
                 return dimensionController.CompareDimension(enemy);

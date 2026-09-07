@@ -59,8 +59,10 @@ namespace Squad
         public Vector3 LastSoundPosition { get; private set; }
         // 지금 조사 중인 (플레이어가 아닌 대상의) 소리의 출처
         public GameObject SoundSource { get; private set; }
-        // 지금 조사 중인 (발전기가 아닌 대상의) 소리가 난 차원
+        // 지금 조사 중인 소리가 난 차원
         public Dimension SoundDimension { get; private set; }
+        // 지금 조사 중인 소리가 차원을 관통하는 소리인가
+        private bool SoundCanCrossDimension { get; private set; }
         // 조사가 완료된 오브젝트의 모음. 이곳에 담긴 오브젝트가 내는 소리는 무시한다.
         private readonly HashSet<GameObject> _investigateCompleted = new();
 
@@ -136,7 +138,7 @@ namespace Squad
         /// 소리가 유발하는 경계 상태를 먼저 본 뒤
         /// 현재 상태보다 높다면 그에 맞게 격상시키고
         /// 소리의 정보가 업데이트된다
-        public void ReportSound(Vector3 soundPosition, Sound sound, GameObject source = null, Dimension dimension = null)
+        public void ReportSound(Vector3 soundPosition, Sound sound, GameObject source = null, Dimension dimension)
         {
             // 이미 조사한 것의 소리라면 아무것도 하지 않는다
             if (source != null && _investigateCompleted.Contains(source))
@@ -154,9 +156,11 @@ namespace Squad
             LastSoundPosition = soundPosition;
             SoundSource = source;
             SoundDimension = dimension;
+            SoundCanCrossDimension = Sound.CanCrossDimension;
 
             /// 벽 너머의 플레이어가 내는 소리, 발전기 소리 등등
             /// 소리는 들리지만 플레이어가 보이지 않는 상황일 때
+            /// 적은 플레이어가 방금까지 그곳에 있었으리라 추측한다.
             if (!PlayerCurrentlyVisible)
                 LastPlayerPosition = soundPosition;
         }

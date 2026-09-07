@@ -135,7 +135,7 @@ namespace Squad
             s.Facts["playerCaught"] = false;
 
             // Investigate-goal facts.
-            s.Facts["heardSound"] = bb.HasSound && CanHearSoundNow();
+            s.Facts["heardSound"] = bb.HasSound && IsInSameDimension();
             s.Facts["atSoundLocation"] = false;
             s.Facts["soundInvestigated"] = false;
 
@@ -209,13 +209,11 @@ namespace Squad
         /// BuildWorldState 함수를 보조하는 함수 (소리)
         private bool CanHearSoundNow()
         {
-            /// 들은 소리가 발전기라면
-            if (_ctx.Blackboard.SoundDimension == null)
+            if (_ctx.Blackboard.SoundCanCrossDimension)
                 return true;
-            /// 그건 아니지만 같은 차원에서 난 소리라면
             else if (_ctx.Blackboard.SoundDimension == enemy.dimension)
                 return true;
-                
+
             return false;
         }
 

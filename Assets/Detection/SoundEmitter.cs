@@ -13,7 +13,7 @@ namespace Squad
         /// 플레이어가 내는 소리가 아니면 오브젝트의 정보를 같이 넘긴다.
         /// 발전기가 내는 소리가 아니면 오브젝트가 현재 위치한 차원을 같이 넘긴다.
         public static void Emit(Vector3 position, Sound sound, LayerMask enemyLayer,
-            GameObject source = null, Dimension dimension = null)
+            GameObject source = null, Dimension dimension)
         {
             if (SquadBlackboard.Instance == null)
                 return;
