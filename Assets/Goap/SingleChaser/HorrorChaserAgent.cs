@@ -211,7 +211,7 @@ namespace Squad
         {
             if (_ctx.Blackboard.SoundCanCrossDimension)
                 return true;
-            else if (_ctx.Blackboard.SoundDimension == enemy.dimension)
+            else if (_ctx.Blackboard.SoundDimension == enemy.Dimension)
                 return true;
 
             return false;
