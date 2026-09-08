@@ -20,6 +20,9 @@ namespace Squad
     /// </summary>
     public class Generator : MonoBehaviour
     {
+        [Header("■ 필수 연결 — 비워두면 에러")]
+        [Tooltip("게임매니저")]
+        [SerializeField] private GameManager manager;
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("발전기 소리를 들을 적 대상 레이어")]
         [SerializeField] private LayerMask enemyLayer;
@@ -45,6 +48,7 @@ namespace Squad
         {
             IsActive = startsActive;
             generator = GetComponent<DimensionMember>();
+            manager.
         }
 
         private void Update()
@@ -117,6 +121,7 @@ namespace Squad
         public void Activate()
         {
             IsActive = true;
+            
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
 
             // 이미 켰으니 안내 문구는 내린다.
