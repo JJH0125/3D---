@@ -12,9 +12,7 @@ namespace Squad
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage = "[E] 탈출";
-        [Tooltip("작동시키는 키")]
-        [SerializeField] private KeyCode interactKey = KeyCode.E;
+        [SerializeField] private string promptMessage = "모든 발전기를 켜세요! (?/?)";
 
         private bool isActive;
         private bool _playerInRange;
@@ -24,13 +22,20 @@ namespace Squad
             isActive = false;
         }
 
+        void Update()
+        {
+            if (_playerInRange && isActive)
+                manager.RoundClear();
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (!IsInLayerMask(other.gameObject.layer, playerLayer))
                 return;
             
             _playerInRange = true;
-            ShowPrompt();
+            if (!isActive)
+                ShowPrompt();
         }
 
         private void OnTriggerExit(Collider other)
@@ -39,7 +44,8 @@ namespace Squad
                 return;
             
             _playerInRange = false;
-            HidePrompt();
+            if (!isActive)
+                HidePrompt();
         }
 
         // LayerMask는 비트로 레이어를 표시한다. 해당 레이어 비트가 켜져 있는지 확인.
@@ -51,6 +57,18 @@ namespace Squad
         private void Activate()
         {
             isActive = true;
+        }
+
+        private void ShowPrompt()
+        {            
+            if (InteractionPrompt.Instance != null)
+                InteractionPrompt.Instance.Show(this, promptMessage);
+        }
+
+        private void HidePrompt()
+        {
+            if (InteractionPrompt.Instance != null)
+                InteractionPrompt.Instance.Hide(this);
         }
     }
 }

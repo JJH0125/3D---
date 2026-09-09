@@ -44,12 +44,17 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.Playing);
     }
 
+    /// 탈출구에 도달하면 호출
+    public void RoundClear()
+    {
+        ChangeState(GameState.Result);
+    }
+
+    /// 적에게 잡히면 호출
     public void GameOver()
     {
         ChangeState(GameState.GameOver);
     }
-
-    public void 
 
     private void ChangeState(GameState state)
     {
@@ -61,11 +66,5 @@ public class GameManager : MonoBehaviour
     public void AddGenerator(GameObject generator)
     {
         generators.Add(generator);
-    }
-
-    /// 탈출구에 도달하면 호출
-    public void RoundClear()
-    {
-
     }
 }
