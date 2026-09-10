@@ -33,7 +33,9 @@ namespace Squad
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage = "[E] 발전기 작동";
+        [SerializeField] private string promptMessage1 = "[E] 발전기 켜기";
+        [SerializeField] private string promptMessage2 = "[E] 발전기 끄기";
+
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
@@ -48,7 +50,7 @@ namespace Squad
         {
             IsActive = startsActive;
             generator = GetComponent<DimensionMember>();
-            manager.
+            manager.AddGenerator(gameObject);
         }
 
         private void Update()
@@ -81,7 +83,7 @@ namespace Squad
                 return;
 
             _playerInRange = true;
-            ShowPromptIfNeeded();
+            ShowPrompt();
         }
 
         private void OnTriggerExit(Collider other)
@@ -94,13 +96,15 @@ namespace Squad
         }
 
         // 이미 켜진 발전기에는 안내 문구를 띄우지 않는다.
-        private void ShowPromptIfNeeded()
+        private void ShowPrompt()
         {
-            if (IsActive)
-                return;
-            
             if (InteractionPrompt.Instance != null)
-                InteractionPrompt.Instance.Show(this, promptMessage);
+            {
+                if (!IsActive)
+                    InteractionPrompt.Instance.Show(this, promptMessage1);
+                else
+                    InteractionPrompt.Instance.Show(this, promptMessage2);
+            }
         }
 
         private void HidePrompt()
@@ -135,7 +139,7 @@ namespace Squad
 
             // 꺼졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
             if (_playerInRange)
-                ShowPromptIfNeeded();
+                ShowPrompt();
         }
     }
 }

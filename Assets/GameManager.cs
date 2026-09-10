@@ -13,7 +13,7 @@ public enum GameState
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-    private GameState CurrentState { get; private set; }
+    public GameState CurrentState { get; private set; }
     private readonly HashSet<GameObject> generators = new();
     
     void Awake()
@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("게임 상태가 " + CurrentState + "로 변경되었습니다.");
     }
 
-    /// 발전기 집합에 발전기를 추가한다.
+    /// 게임이 시작되면, 발전기들이 자신을 GameManager에 등록한다.
     public void AddGenerator(GameObject generator)
     {
         generators.Add(generator);

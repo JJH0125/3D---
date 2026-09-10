@@ -42,11 +42,15 @@ namespace Squad
 
         private float _stepTimer;
 
+        private Player player;
+
         private void Awake()
         {
             // Player.cs와 같은 방식으로, 연결이 없으면 자식에서 찾는다.
             if (animator == null)
                 animator = GetComponentInChildren<Animator>();
+
+            player = GetComponent<Player>();
 
             _movingHash = Animator.StringToHash(movingParam);
             _walkHash = Animator.StringToHash(walkParam);
@@ -73,7 +77,7 @@ namespace Squad
             _stepTimer -= Time.deltaTime;
             if (_stepTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, sound, enemyLayer, myDimension);
+                SoundEmitter.Emit(transform.position, sound, enemyLayer, player.myDimension);
                 _stepTimer = interval;
             }
         }

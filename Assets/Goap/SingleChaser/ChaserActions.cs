@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace Squad
@@ -46,13 +45,11 @@ namespace Squad
                 new ReachPlayer(),
                 new MoveToSound(),
                 new SearchSoundArea(),
-                new WanderStep(),
+                new WanderStep()
             };
         }
     }
-
-    // ---- Catch goal --------------------------------------------------------
-
+    
     /// <summary>
     /// 습격을 목표로 하는 Action
     /// </summary>
@@ -83,8 +80,6 @@ namespace Squad
             return arrived;
         }
     }
-
-    // ---- Investigate-sound goal -------------------------------------------
 
     /// <summary>
     /// 소리 조사를 목표로 하는 첫 번째 Action

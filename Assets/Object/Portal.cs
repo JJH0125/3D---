@@ -21,8 +21,8 @@ namespace Squad
 
         void Update()
         {
-            if (_playerInRange && IsActive && Input.GetKeyDown(interactKey))
-                manager.RoundClear();
+            if (_playerInRange && Input.GetKeyDown(interactKey))
+                dimensionController.SwitchPlayerDimension();
         }
 
         private void OnTriggerEnter(Collider other)
