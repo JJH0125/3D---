@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("게임 상태가 " + CurrentState + "로 변경되었습니다.");
     }
 
-    /// 게임이 시작되면, 발전기들이 자신을 GameManager에 등록한다.
+    /// 게임이 시작되면, 발전기들은 생성되는 즉시 자신을 Manager에 등록한다.
     public void AddGenerator(GameObject generator)
     {
         generators.Add(generator);

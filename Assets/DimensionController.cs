@@ -1,7 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum Dimension { Real, Fake }
+/// Real 차원, Fake 차원이 존재하며
+/// 발전기가 소리를 전달할 때 쓸 None 값이 따로 존재한다
+public enum Dimension { None, Real, Fake }
 
 namespace Squad
 {

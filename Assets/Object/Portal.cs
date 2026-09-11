@@ -8,21 +8,22 @@ namespace Squad
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage = "[E] Dimension Convert";
+        [SerializeField] private string promptMessage1 = "[E] Fake 차원으로 이동";
+        [SerializeField] private string promptMessage2 = "[E] Real 차원으로 이동";
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
-        private DimensionController dimensionController;
+        private DimensionController controller;
 
         // 작동시킬 수 있는 범위 내에 플레이어가 들어와있는지 여부.
         private bool _playerInRange;
 
-        void Start() => dimensionController = DimensionController.Instance;
+        void Start() => controller = DimensionController.Instance;
 
         void Update()
         {
             if (_playerInRange && Input.GetKeyDown(interactKey))
-                dimensionController.SwitchPlayerDimension();
+                controller.SwitchPlayerDimension();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -52,7 +53,12 @@ namespace Squad
         private void ShowPrompt()
         {            
             if (InteractionPrompt.Instance != null)
-                InteractionPrompt.Instance.Show(this, promptMessage);
+            {
+                if (controller.player.myDimension == Dimension.Real)
+                    InteractionPrompt.Instance.Show(this, promptMessage1);
+                else
+                    InteractionPrompt.Instance.Show(this, promptMessage2);
+            }                
         }
 
         private void HidePrompt()

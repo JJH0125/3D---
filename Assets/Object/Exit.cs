@@ -54,7 +54,8 @@ namespace Squad
             return (mask.value & (1 << layer)) != 0;
         }
 
-        private void Activate()
+        /// 발전기가 모두 켜지면 GameManager가 호출
+        public void Activate()
         {
             isActive = true;
         }
