@@ -48,7 +48,7 @@ namespace Squad
         private void Start()
         {
             IsActive = startsActive;
-            manager.AddGenerator(gameObject);
+            manager.AddGenerator(this);
         }
 
         private void Update()
@@ -124,6 +124,8 @@ namespace Squad
             IsActive = true;
             
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
+
+            manager.CheckExit();    // 발전기가 켜질 때마다 manager가 출구 활성화를 검사.
 
             // 켜졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
             if (_playerInRange)

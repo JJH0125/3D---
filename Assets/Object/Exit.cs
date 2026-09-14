@@ -7,19 +7,19 @@ namespace Squad
         [Header("■ 필수 연결 — 비워두면 에러")]
         [Tooltip("게임매니저")]
         [SerializeField] private GameManager manager;
-
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
         [SerializeField] private string promptMessage = "모든 발전기를 켜세요! (?/?)";
 
-        private bool isActive;
+        private bool IsActive;
         private bool _playerInRange;
 
         void Start()
         {
-            isActive = false;
+            manager.AddExit(this);
+            IsActive = false;
         }
 
         void Update()
@@ -57,7 +57,7 @@ namespace Squad
         /// 발전기가 모두 켜지면 GameManager가 호출
         public void Activate()
         {
-            isActive = true;
+            IsActive = true;
         }
 
         private void ShowPrompt()
