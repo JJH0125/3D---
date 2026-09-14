@@ -290,8 +290,8 @@ IsInSameDimension이 Update마다 GetComponent하는 문제
 
 4차 작업
 현재 구조가
-    Controller → Member (enemies에 담고 있음)
-    Member → Controller (CompareDimension 호출)
+Controller → Member (enemies에 담고 있음)
+Member → Controller (CompareDimension 호출)
 서로를 참조하는 구조 (되도록이면 피해야 할 점)
 대안 -> SetRenderer가 판단 결과를 받도록!
 컨트롤러가 비교하여 너 나타나/숨어 를 지시
@@ -305,10 +305,10 @@ A: 아니요, 그렇지 않습니다. 매 재계획마다 새로 만들어집니
 BuildWorldState가 하는 일을 보면 명확합니다.
 
 Replan() 호출 (0.4초마다)
-  → BuildWorldState()
-      새 WorldState 객체 생성
-      블랙보드를 읽어서 fact들을 채움
-  → 이 상태로 계획 수립
+→ BuildWorldState()
+새 WorldState 객체 생성
+블랙보드를 읽어서 fact들을 채움
+→ 이 상태로 계획 수립
 
 매번 새 WorldState를 만들고, 그 시점의 블랙보드를 스냅샷처럼 찍는 겁니다.
 
@@ -316,8 +316,8 @@ Replan() 호출 (0.4초마다)
 
 BuildWorldState는 조건 없이 모든 fact를 채웁니다.
 
-playerVisible = (블랙보드 값)     ← true든 false든 항상 넣음
-heardSound    = (블랙보드 값)     ← 마찬가지
+playerVisible = (블랙보드 값) ← true든 false든 항상 넣음
+heardSound = (블랙보드 값) ← 마찬가지
 
 그러니 게임 시작 직후에도 키는 다 있습니다. 값이 false일 뿐이죠.
 
@@ -330,7 +330,7 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 이게 중요한 지점입니다. WorldState는 기억이 아닙니다.
 
-0.0초: WorldState 생성 → { playerVisible: true }  → 사용 후 버림
+0.0초: WorldState 생성 → { playerVisible: true } → 사용 후 버림
 0.4초: WorldState 생성 → { playerVisible: false } → 사용 후 버림
 0.8초: WorldState 생성 → { playerVisible: false } → ...
 
@@ -340,29 +340,29 @@ heardSound    = (블랙보드 값)     ← 마찬가지
 
 그럼 WorldState는 왜 있나 :
 
-*GOAP 플래너가 A 탐색을 하기 위한 재료**입니다.
+\*GOAP 플래너가 A 탐색을 하기 위한 재료\*\*입니다.
 
-앞서 다룬 상태공간 A*를 떠올려보세요.
+앞서 다룬 상태공간 A\*를 떠올려보세요.
 
 현재 상태 → [행동 적용] → 새 상태 → [행동 적용] → ... → 목표 상태
 
 플래너는 이 탐색 과정에서 가상의 상태들을 계속 만들어냅니다.
 
 { playerVisible: true, playerCaught: false }
-  → ReachPlayer 적용 (Effects: playerCaught = true)
-{ playerVisible: true, playerCaught: true }  ← 이건 상상 속의 상태
-  → 목표와 일치? → 계획 완성
+→ ReachPlayer 적용 (Effects: playerCaught = true)
+{ playerVisible: true, playerCaught: true } ← 이건 상상 속의 상태
+→ 목표와 일치? → 계획 완성
 
 두 번째 상태는 실제로 일어난 게 아닙니다. "이 행동을 하면 이렇게 될 것"이라는 가정이죠.
 
 그래서 WorldState에 Clone()과 Apply()가 있는 겁니다. 원본을 복제해서 효과를 적용해보는 거죠.
 
 정리하면 역할이 다릅니다 :
-	블랙보드	WorldState
-성격	지속되는 기억	일회용 스냅샷
-수명	게임 내내	재계획 한 번
-누가 씀	감지가 쓰고 GOAP가 읽음	플래너가 탐색에 사용
-내용	실제 상황	실제 + 가상
+블랙보드 WorldState
+성격 지속되는 기억 일회용 스냅샷
+수명 게임 내내 재계획 한 번
+누가 씀 감지가 쓰고 GOAP가 읽음 플래너가 탐색에 사용
+내용 실제 상황 실제 + 가상
 
 BuildWorldState는 둘 사이의 번역기입니다. "블랙보드의 언어"를 "플래너가 이해하는 fact"로 옮기는 거죠.
 
@@ -370,18 +370,15 @@ B 방식 구현에 이게 왜 중요한가 :
 
 지금 하시려는 작업이 정확히 이 번역 지점에 손대는 겁니다.
 
-지금:    블랙보드 값을 그대로 옮김
-바꾸면:  옮기면서 "나에게 유효한가"를 거름
+지금: 블랙보드 값을 그대로 옮김
+바꾸면: 옮기면서 "나에게 유효한가"를 거름
 
 WorldState가 매번 새로 만들어지니, 필터가 매 재계획마다 다시 적용됩니다. 차원이 바뀌면 다음 재계획(0.4초 이내)에 반영되죠.
 
 한 번 걸러진 게 남아 있을 걱정은 없습니다. 매번 새로 만드니까요.
 
-
-
-
 Q: private static bool Fact(WorldState s, string key)
-            => s.Facts.TryGetValue(key, out bool v) && v;
+=> s.Facts.TryGetValue(key, out bool v) && v;
 그러면 GoalIsRelevant 함수에 쓰이는 이 Fact 함수는 s에 key가 있는지를 먼저 검사하고 그 다음에 key의 value가 true인지를 검사하는 거 아냐? key가 존재하지 않을 일이 없다면 key가 있는지 검사는 왜 하는 거지?
 
 A: 좋은 지적입니다. 지금 BuildWorldState가 만든 상태에 대해서는 그 검사가 불필요합니다. 모든 키를 항상 채우니까요.
@@ -393,14 +390,14 @@ WorldState는 다른 데서도 만들어집니다 :
 
 csharp
 // ChaserGoals에서
-catchPlayer.Desired.Facts["playerCaught"] = true;   // 키가 하나뿐
+catchPlayer.Desired.Facts["playerCaught"] = true; // 키가 하나뿐
 목표는 "원하는 것"만 담습니다. playerVisible이나 heardSound는 안 들어 있죠. 앞서 Matches가 "goal의 fact만 검사한다"고 했던 게 이 때문입니다.
 
 이런 WorldState에 Fact(goal.Desired, "heardSound")를 부르면 키가 없습니다.
 
 없는 키를 그냥 읽으면 :
 csharp
-s.Facts["heardSound"]   // KeyNotFoundException 발생!
+s.Facts["heardSound"] // KeyNotFoundException 발생!
 Dictionary는 없는 키를 읽으면 예외를 던집니다. 게임이 멈추죠.
 
 TryGetValue는 그걸 막고 "없으면 false"로 처리합니다.
@@ -408,7 +405,7 @@ TryGetValue는 그걸 막고 "없으면 false"로 처리합니다.
 의미상으로도 맞습니다 :
 GOAP에서 "키가 없다"와 "false"는 같은 뜻으로 취급하는 게 자연스럽습니다.
 
-heardSound가 없다  →  소리를 못 들었다  →  false
+heardSound가 없다 → 소리를 못 들었다 → false
 "모르는 것은 참이 아니다"라는 규칙이죠. 이걸 closed-world assumption이라고 부릅니다. 자동 계획 분야에서 표준적인 가정입니다.
 
 그래서 이 한 줄이 두 가지를 동시에 합니다.
@@ -441,10 +438,10 @@ goal의 Desired를 검사하는 경우
 
 알고 계시면 나중에 판단할 수 있습니다. 예를 들어 "fact를 조건부로 채우도록 바꾸자"고 할 때, 이 함수가 이미 대비되어 있다는 걸 아니까요.
 
-
 앞으로 할 것
 
 게임 흐름 만들기
+
 1. 클리어 조건 (발전기 전부 → 출구 활성화 → 탈출)
 2. 게임 오버 (잡히면)
 3. 반복 구조 (탈출 후 다음 회차)
@@ -465,3 +462,5 @@ GameManager의 역할
 UI를 직접 그리기 → UI 담당이 따로
 발전기 목록을 직접 뒤지기 → 발전기가 알리게
 적을 생성하기 → 나중에 스포너가
+
+9/13 GameManager 구현 작업 착수.
