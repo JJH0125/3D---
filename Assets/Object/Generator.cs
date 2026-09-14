@@ -41,7 +41,6 @@ namespace Squad
 
         // 작동 중인지 여부. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
         public bool IsActive { get; private set; }
-        private DimensionMember generator;
         private float _emitTimer;
         // 작동시킬 수 있는 범위 내에 플레이어가 들어와있는지 여부.
         private bool _playerInRange;
@@ -49,7 +48,6 @@ namespace Squad
         private void Start()
         {
             IsActive = startsActive;
-            generator = GetComponent<DimensionMember>();
             manager.AddGenerator(gameObject);
         }
 
@@ -70,7 +68,7 @@ namespace Squad
 
             if (_emitTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer, generator.Dimension, gameObject);
+                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer, Dimension.None, gameObject);
                 _emitTimer = emitInterval;
             }
         }
@@ -95,7 +93,6 @@ namespace Squad
             HidePrompt();
         }
 
-        // 이미 켜진 발전기에는 안내 문구를 띄우지 않는다.
         private void ShowPrompt()
         {
             if (InteractionPrompt.Instance != null)
@@ -128,8 +125,9 @@ namespace Squad
             
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
 
-            // 이미 켰으니 안내 문구는 내린다.
-            HidePrompt();
+            // 켜졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
+            if (_playerInRange)
+                ShowPrompt();
         }
 
         /// <summary>발전기를 끈다.</summary>
