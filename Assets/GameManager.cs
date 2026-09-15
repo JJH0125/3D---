@@ -14,6 +14,9 @@ namespace Squad
 
     public class GameManager : MonoBehaviour
     {
+        [Header("■ 필수 연결 — 비워두면 에러")]
+        [Tooltip("상태 프롬프")]
+        [SerializeField] private StatusPrompt1 status;
         public static GameManager Instance { get; private set; }
         public GameState CurrentState { get; private set; }
 
@@ -124,13 +127,10 @@ namespace Squad
                     count++;
 
             numberOfActivatedGenerator = count;
-            // 숫자 변화를 UI에 적용하는 코드...
+            status.SetGenerators(count, generators.Count);
 
             if (numberOfActivatedGenerator == generators.Count)
-            {
                 _exit.Activate();
-                // 출구가 활성화되었음을 알리도록 UI를 설정하는 코드...
-            }
         }
     }
 }

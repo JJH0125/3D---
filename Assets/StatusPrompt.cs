@@ -22,10 +22,6 @@ namespace Squad
         [Tooltip("화면에 안내 문구를 표시할 UI 텍스트")]
         [SerializeField] private TMP_Text promptText;
 
-        // 지금 이 문구를 띄운 주인. 여러 오브젝트가 겹칠 때
-        // "내가 띄운 문구만 내가 내린다"를 보장하기 위해 기억한다.
-        private object _owner;
-
         private void Awake()
         {
             Instance = this;
