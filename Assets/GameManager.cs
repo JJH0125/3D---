@@ -78,30 +78,30 @@ namespace Squad
             switch (CurrentState)
             {
             case GameState.Title:
-                titleUI.SetActive(true);
-                gameUI.SetActive(false);
-                pauseUI.SetActive(false);
+                // titleUI.SetActive(true);
+                //gameUI.SetActive(false);
+                //pauseUI.SetActive(false);
                 Time.timeScale = 0f;
                 break;
 
             case GameState.Playing:
-                titleUI.SetActive(false);
-                gameUI.SetActive(true);
-                pauseUI.SetActive(false);
+                // titleUI.SetActive(false);
+                // gameUI.SetActive(true);
+                // pauseUI.SetActive(false);
                 Time.timeScale = 1f;
                 break;
 
             case GameState.Pause:
-                pauseUI.SetActive(true);
+                // pauseUI.SetActive(true);
                 Time.timeScale = 0f;
                 break;
 
             case GameState.GameOver:
-                gameOverUI.SetActive(true);
+                // gameOverUI.SetActive(true);
                 Time.timeScale = 0f;
                 break;
             case GameState.Result:
-                resultUI.SetActive(true);
+                // resultUI.SetActive(true);
                 Time.timeScale = 0f;
                 break;
             }

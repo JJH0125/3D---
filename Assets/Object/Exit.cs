@@ -11,7 +11,7 @@ namespace Squad
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
         [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage = "모든 발전기를 켜세요! (?/?)";
+        [SerializeField] private string promptMessage = "아직 열리지 않았군요...";
 
         private bool IsActive;
         private bool _playerInRange;
@@ -24,7 +24,7 @@ namespace Squad
 
         void Update()
         {
-            if (_playerInRange && isActive)
+            if (_playerInRange && IsActive)
                 manager.RoundClear();
         }
 
@@ -34,7 +34,7 @@ namespace Squad
                 return;
             
             _playerInRange = true;
-            if (!isActive)
+            if (!IsActive)
                 ShowPrompt();
         }
 
@@ -44,7 +44,7 @@ namespace Squad
                 return;
             
             _playerInRange = false;
-            if (!isActive)
+            if (!IsActive)
                 HidePrompt();
         }
 
