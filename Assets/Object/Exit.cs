@@ -16,12 +16,8 @@ namespace Squad
         private bool IsActive;
         private bool _playerInRange;
 
-        void Start()
-        {
-            manager.AddExit(this);
-            IsActive = false;
-        }
-
+        void Start() => IsActive = false;
+        
         void Update()
         {
             if (_playerInRange && IsActive)
