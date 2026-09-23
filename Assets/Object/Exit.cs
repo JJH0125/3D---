@@ -4,9 +4,6 @@ namespace Squad
 {
     public class Exit : MonoBehaviour
     {
-        [Header("■ 필수 연결 — 비워두면 에러")]
-        [Tooltip("게임매니저")]
-        [SerializeField] private GameManager manager;
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
@@ -16,12 +13,18 @@ namespace Squad
         private bool IsActive;
         private bool _playerInRange;
 
-        void Start() => IsActive = false;
+        void Start()
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.AddExit(this);
+                
+            IsActive = false;
+        }
         
         void Update()
         {
             if (_playerInRange && IsActive)
-                manager.RoundClear();
+                GameManager.Instance.RoundClear();
         }
 
         private void OnTriggerEnter(Collider other)

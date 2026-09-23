@@ -46,7 +46,7 @@ public class Player : MonoBehaviour
     private bool isJump;
     public Dimension myDimension { get; private set; }
 
-    void Awake()
+    void Start()
     {
         controller = GetComponent<CharacterController>();
 
@@ -54,6 +54,10 @@ public class Player : MonoBehaviour
             animator = GetComponentInChildren<Animator>();
 
         myDimension = Dimension.Real;
+
+        follow = cameraTransform.GetComponent<Follow>();
+        if (follow != null)
+            follow.SetTarget(transform);
 
         /// 쿼터뷰 느낌을 살리기 위해 카메라를 y축 기준 45도로 돌렸기 때문에,
         /// 방향키 입력에 따른 움직임도 카메라를 따라 돌려야 한다.

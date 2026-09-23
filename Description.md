@@ -464,3 +464,13 @@ UI를 직접 그리기 → UI 담당이 따로
 적을 생성하기 → 나중에 스포너가
 
 9/13 GameManager 구현 작업 착수.
+
+9/22
+차원을 넘는 순간 잡힐 때 게임오버되는 버그
+
+Stage라는 부모를 만들고
+맵, 플레이어, 적 등을 모두 자식으로 집어넣는다
+게임 및 라운드 시작, 종료 때마다 Stage를 생성하고 삭제한다
+이렇게 하면 각 개체 간의 인스펙터 연결도 살릴 수 있다
+
+Stage 안에 담을 것 : SquadBlackboard, DimensionController, PathController(맵이 바뀔 수 있는 경우)

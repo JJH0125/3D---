@@ -78,10 +78,13 @@ namespace Squad
             /// 플레이어와 아무리 가까워도 playerVisible이 이미 false이기 때문에
             /// 다른 Plan을 재설계할 것이다.
             
+            /// 도달했다 = 게임 오
             if (arrived)
+            {
                 GameManager.Instance.GameOver();
                 return true;
-            
+            }
+                
             return false;
         }
     }

@@ -44,8 +44,6 @@ namespace Squad
         [SerializeField] private GameObject resultUI;
         [Tooltip("진행 상황 표시 (라운드, 발전기)")]
         [SerializeField] private StatusPrompt statusPrompt;
-        [Tooltip("탈출구")]
-        [SerializeField] private Exit exit;
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("전체 라운드 수")]
@@ -63,6 +61,9 @@ namespace Squad
         /// 클리어 조건을 검사하기 위한 발전기 집합.
         /// 각 발전기가 시작할 때 스스로 등록한다.
         private readonly HashSet<Generator> generators = new();
+
+        /// 출구
+        private Exit _exit;
 
         private void Awake()
         {
@@ -89,7 +90,7 @@ namespace Squad
         public void StartGame()
         {
             ChangeState(GameState.Playing);
-            /// 게임 시작 구현 필요
+            ClearObjects();
         }
 
         public void PauseGame()
@@ -108,19 +109,21 @@ namespace Squad
         public void RoundClear()
         {
             // 같은 프레임에 여러 번 호출되어도 한 번만 처리한다.
-            if (CurrentState != GameState.Playing) return;
+            if (CurrentState != GameState.Playing)
+                return;
 
             ChangeState(GameState.Result);
-            /// 탈출 성공 구현 필요
+            ClearObjects();
         }
 
         /// <summary>적에게 잡히면 호출</summary>
         public void GameOver()
         {
-            if (CurrentState != GameState.Playing) return;
+            if (CurrentState != GameState.Playing)
+                return;
 
             ChangeState(GameState.GameOver);
-            /// 탈출 실패 구현 필요
+            ClearObjects();
         }
 
         private void ChangeState(GameState newState)
@@ -184,11 +187,18 @@ namespace Squad
 
         // ── 발전기 ───────────────────────────────────────────────────
 
-        /// <summary>발전기가 시작할 때 스스로 등록한다.</summary>
+        /// <summary>생성된 발전기가 스스로를 등록한다.</summary>
         public void AddGenerator(Generator generator)
         {
             if (generator != null)
                 generators.Add(generator);
+        }
+
+        /// <summary>생성된 출구가 스스로를 등록한다.</summary>
+        public void AddExit(Exit exit)
+        {
+            if (exit != null)
+                _exit = exit;
         }
 
         /// <summary>
@@ -201,13 +211,13 @@ namespace Squad
 
             if (generators.Count > 0 && ActivatedGenerators >= generators.Count)
             {
-                if (exit != null)
-                    exit.Activate();
+                if (_exit != null)
+                    _exit.Activate();
             }
         }
 
         /// <summary>
-        /// 켜진 발전기 수를 다시 세고 화면 표시를 갱신한다.
+        /// 켜진 발전기 수를 다시 세어, 화면에 표시될 ActivatedGenerators 값을 갱신한다.
         /// 호출할 때마다 0부터 세므로 여러 번 불러도 값이 누적되지 않는다.
         /// </summary>
         private void RefreshStatus()
@@ -217,13 +227,20 @@ namespace Squad
                 if (generator != null && generator.IsActive)
                     count++;
 
+            // 값 갱신
             ActivatedGenerators = count;
 
             if (statusPrompt != null)
             {
-                statusPrompt.SetGenerators(count, generators.Count);
+                statusPrompt.SetGenerators(ActivatedGenerators, generators.Count);
                 statusPrompt.SetRound(CurrentRound, totalRounds);
             }
+        }
+
+        private void ClearObjects()
+        {
+            generators.Clear();
+            exit = null;
         }
     }
 }

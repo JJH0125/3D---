@@ -2,15 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+///<summary>카메라에 붙일 스크립트. 플레이어가 생성되면 쿼터뷰 형태로 플레이어를 비춘다.</summary>
 public class Follow : MonoBehaviour
 {
-    [Header("■ 필수 연결 — 비워두면 에러")]
-    [Tooltip("따라다닐 플레이어")]
-    [SerializeField] private Transform target;
-
     [Header("○ 튜닝 값 — 자유롭게 조절")]
     [Tooltip("플레이어 기준 카메라의 위치")]
     [SerializeField] private Vector3 offset;
+
+    private Transform target;
 
     /// <summary>
     /// Update에서 바뀐 target의 position을
@@ -20,6 +19,10 @@ public class Follow : MonoBehaviour
     /// </summary>
     void LateUpdate()
     {
+        if (target == null)
+            return;
         transform.position = target.position + offset;
     }
+
+    public void SetTarget(Transform player) => target = player;
 }

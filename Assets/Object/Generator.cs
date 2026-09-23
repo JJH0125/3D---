@@ -20,9 +20,6 @@ namespace Squad
     /// </summary>
     public class Generator : MonoBehaviour
     {
-        [Header("■ 필수 연결 — 비워두면 에러")]
-        [Tooltip("게임매니저")]
-        [SerializeField] private GameManager manager;
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("발전기 소리를 들을 적 대상 레이어")]
         [SerializeField] private LayerMask enemyLayer;
@@ -48,7 +45,7 @@ namespace Squad
         private void Start()
         {
             IsActive = startsActive;
-            manager.AddGenerator(this);
+            GameManager.Instance.AddGenerator(this);
         }
 
         private void Update()
@@ -125,7 +122,7 @@ namespace Squad
             
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
 
-            manager.CheckExit();    // 발전기가 켜질 때마다 manager가 출구 활성화를 검사.
+            GameManager.Instance.CheckExit();    // 발전기가 켜질 때마다 manager가 출구 활성화를 검사.
 
             // 켜졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
             if (_playerInRange)
