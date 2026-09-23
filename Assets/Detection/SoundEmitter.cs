@@ -14,6 +14,10 @@ namespace Squad
         /// 발전기가 내는 소리가 아니면 오브젝트가 현재 위치한 차원을 같이 넘긴다.
         public static void Emit(Vector3 position, Sound sound, LayerMask enemyLayer, Dimension dimension, GameObject source = null)
         {
+             // 소리 반경 표시 — 들은 적이 없어도 보여줘야 하므로 맨 앞에서 호출
+            if (SoundRingDisplay.Instance != null)
+                SoundRingDisplay.Instance.Show(position, sound);
+            
             if (SquadBlackboard.Instance == null)
                 return;
             

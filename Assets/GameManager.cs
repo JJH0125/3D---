@@ -89,16 +89,19 @@ namespace Squad
         public void StartGame()
         {
             ChangeState(GameState.Playing);
+            /// 게임 시작 구현 필요
         }
 
         public void PauseGame()
         {
             ChangeState(GameState.Pause);
+            /// 게임 일시정지 구현 필요
         }
 
         public void ResumeGame()
         {
             ChangeState(GameState.Playing);
+            /// 게임으로 돌아가기 구현 필요
         }
 
         /// <summary>탈출구에 도달하면 호출</summary>
@@ -108,6 +111,7 @@ namespace Squad
             if (CurrentState != GameState.Playing) return;
 
             ChangeState(GameState.Result);
+            /// 탈출 성공 구현 필요
         }
 
         /// <summary>적에게 잡히면 호출</summary>
@@ -116,6 +120,7 @@ namespace Squad
             if (CurrentState != GameState.Playing) return;
 
             ChangeState(GameState.GameOver);
+            /// 탈출 실패 구현 필요
         }
 
         private void ChangeState(GameState newState)
