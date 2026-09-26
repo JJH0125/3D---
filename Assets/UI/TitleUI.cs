@@ -1,0 +1,27 @@
+using UnityEngine;
+
+namespace Squad
+{
+    public class TitleUI : MonoBehaviour
+    {
+        // 시작 버튼의 OnClick 이벤트에 연결
+        public void OnClickStartGame()
+        {
+            // GameManager의 상태를 Playing으로 변경
+            GameManager.Instance.StartGame();
+        }
+
+        // 종료 버튼의 OnClick 이벤트에 연결
+        public void OnClickQuitGame()
+        {
+            Debug.Log("게임을 종료합니다.");
+
+            // Application.Quit은 에디터에서 무시되므로, 에디터에서는 플레이 모드를 끈다.
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+    }
+}

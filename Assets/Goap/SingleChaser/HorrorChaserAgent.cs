@@ -30,7 +30,7 @@ namespace Squad
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("플레이어를 게임오버 시키는 거리")]
-        [SerializeField] private float catchRadius = 1.2f;
+        [SerializeField] private float catchRadius = 3.0f;
         [Tooltip("소리/배회 target에 접근하여 행동을 시작하는 거리")]
         [SerializeField] private float arriveRadius = 0.6f;
         [Tooltip("replan 하는 주기")]

@@ -16,10 +16,6 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class Player : MonoBehaviour
 {
-    [Header("■ 필수 연결 — 비워두면 에러")]
-    [Tooltip("카메라")]
-    [SerializeField] private Transform cameraTransform;
-
     [Header("○ 튜닝 값 — 자유롭게 조절")]
     [Tooltip("플레이어의 이동속도")]
     [SerializeField] private float moveSpeed;
@@ -44,7 +40,9 @@ public class Player : MonoBehaviour
     private Vector3 horizontal;
     private bool isWalk;
     private bool isJump;
-    public Dimension myDimension { get; private set; }
+    /// 플레이어가 속한 차원. 게임 시작 시 항상 Real 차원.
+    public Dimension myDimension { get; private set; } = Dimension.Real;
+    private Transform cameraTransform;
 
     void Start()
     {
@@ -53,9 +51,10 @@ public class Player : MonoBehaviour
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
 
-        myDimension = Dimension.Real;
+        if (cameraTransform == null)
+            cameraTransform = Camera.main.transform;
 
-        follow = cameraTransform.GetComponent<Follow>();
+        Follow follow = cameraTransform.GetComponent<Follow>();
         if (follow != null)
             follow.SetTarget(transform);
 
@@ -76,6 +75,13 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        /// 일시정지 중에는 입력을 받지 않는다.
+        /// Move는 deltaTime이 0이라 멈추지만, Turn은 회전값을 바로 넣기 때문에
+        /// 막지 않으면 일시정지 화면에서도 방향키로 캐릭터가 돌아간다.
+        /// (점프 입력이 쌓였다가 재개 직후 튀는 것도 함께 막는다)
+        if (Time.timeScale == 0f)
+            return;
+
         GetInput();
         Move();
         Turn();

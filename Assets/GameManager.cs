@@ -17,7 +17,8 @@ namespace Squad
     ///
     /// 담당하는 것:
     ///   - 게임 상태(타이틀/플레이/일시정지/게임오버/결과) 전환
-    ///   - 발전기 등록 및 작동 수 집계
+    ///   - 발전기와 출구 관리
+    ///   - 라운드 수/발전기 수 표시
     ///   - 클리어 조건 판정과 탈출구 활성화
     ///
     /// UI는 상태에 맞춰 켜고 끄기만 하며, 내용 갱신은 각 UI 클래스에 맡긴다.
@@ -32,23 +33,26 @@ namespace Squad
         public static GameManager Instance { get; private set; }
 
         [Header("■ 필수 연결 — 비워두면 에러")]
+        [Tooltip("생성할 게임 무대 Prefab")]
+        [SerializeField] private GameObject stage;
         [Tooltip("타이틀 화면")]
         [SerializeField] private GameObject titleUI;
         [Tooltip("게임 플레이 중 표시되는 UI 묶음")]
         [SerializeField] private GameObject gameUI;
+        [Tooltip("진행 상황 표시 (라운드, 발전기)")]
+        [SerializeField] private StatusPrompt statusPrompt;
         [Tooltip("일시정지 화면")]
         [SerializeField] private GameObject pauseUI;
         [Tooltip("게임 오버 화면")]
         [SerializeField] private GameObject gameOverUI;
         [Tooltip("라운드 클리어 화면")]
         [SerializeField] private GameObject resultUI;
-        [Tooltip("진행 상황 표시 (라운드, 발전기)")]
-        [SerializeField] private StatusPrompt statusPrompt;
-
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("전체 라운드 수")]
         [SerializeField] private int totalRounds = 5;
 
+        /// 현재 존재하는 스테이지 오브젝트. 게임 시작 시 생성되고, 라운드 종료 시 제거된다.
+        private GameObject currentStage;
         /// 현재 게임 상태
         public GameState CurrentState { get; private set; }
 
@@ -79,8 +83,9 @@ namespace Squad
 
         private void Start()
         {
-            // 발전기들의 등록(Start)이 끝난 뒤에 화면을 구성해야 하므로
+            // 다른 오브젝트들의 Awake가 끝난 뒤에 화면을 구성하도록
             // Awake가 아니라 Start에서 초기 상태를 설정한다.
+            // 발전기 수 표시는 발전기가 등록될 때마다(AddGenerator) 갱신된다.
             ChangeState(GameState.Title);
             RefreshStatus();
         }
@@ -90,7 +95,28 @@ namespace Squad
         public void StartGame()
         {
             ChangeState(GameState.Playing);
-            ClearObjects();
+            ClearExitAndGenerators();
+            currentStage = Instantiate(stage, Vector3.zero, Quaternion.identity);
+        }
+
+        /// <summary>
+        /// 결과 화면의 다음 라운드 버튼에서 호출.
+        /// 라운드를 하나 올리고 새 Stage로 시작한다.
+        /// 마지막 라운드까지 클리어했다면 라운드를 1로 되돌리고 타이틀로 돌아간다.
+        /// </summary>
+        public void NextRound()
+        {
+            if (CurrentRound >= totalRounds)
+            {
+                CurrentRound = 1;
+                RefreshStatus();
+                ChangeState(GameState.Title);
+                return;
+            }
+
+            /// 라운드 증가 후 새 Stage를 시작한다.
+            CurrentRound++;
+            StartGame();
         }
 
         public void PauseGame()
@@ -105,7 +131,7 @@ namespace Squad
             /// 게임으로 돌아가기 구현 필요
         }
 
-        /// <summary>탈출구에 도달하면 호출</summary>
+        /// 탈출구에 도달하면 호출
         public void RoundClear()
         {
             // 같은 프레임에 여러 번 호출되어도 한 번만 처리한다.
@@ -113,7 +139,10 @@ namespace Squad
                 return;
 
             ChangeState(GameState.Result);
-            ClearObjects();
+            if (currentStage != null)
+                Destroy(currentStage);
+                
+            ClearExitAndGenerators();
         }
 
         /// <summary>적에게 잡히면 호출</summary>
@@ -123,7 +152,10 @@ namespace Squad
                 return;
 
             ChangeState(GameState.GameOver);
-            ClearObjects();
+            if (currentStage != null)
+                Destroy(currentStage);
+
+            ClearExitAndGenerators();
         }
 
         private void ChangeState(GameState newState)
@@ -158,8 +190,6 @@ namespace Squad
                     Time.timeScale = 0f;
                     break;
             }
-
-            Debug.Log("게임 상태가 " + CurrentState + "로 변경되었습니다.");
         }
 
         /// <summary>
@@ -187,14 +217,20 @@ namespace Squad
 
         // ── 발전기 ───────────────────────────────────────────────────
 
-        /// <summary>생성된 발전기가 스스로를 등록한다.</summary>
+        /// <summary>
+        /// 생성된 발전기가 스스로를 등록한다.
+        /// Stage는 게임 시작 후에 생성되므로, 등록될 때마다 표시를 갱신한다.
+        /// </summary>
         public void AddGenerator(Generator generator)
         {
             if (generator != null)
+            {
                 generators.Add(generator);
+                RefreshStatus();
+            }
         }
 
-        /// <summary>생성된 출구가 스스로를 등록한다.</summary>
+        /// 생성된 출구가 스스로를 등록한다.
         public void AddExit(Exit exit)
         {
             if (exit != null)
@@ -237,10 +273,23 @@ namespace Squad
             }
         }
 
-        private void ClearObjects()
+        /// <summary>
+        /// 라운드가 끝나거나 게임이 종료될 때, 현재 존재하는 출구와 발전기들을 제거한다.
+        /// 매니저는 Stage의 존재와 관계없이 발전기와 출구를 관리하므로
+        /// Stage가 제거될 때도 이 메서드를 호출해야 한다.
+        /// </summary>
+        private void ClearExitAndGenerators()
         {
             generators.Clear();
-            exit = null;
+            _exit = null;
+
+            // Stage가 파괴되면 OnTriggerExit이 호출되지 않으므로
+            // 범위 안에서 띄웠던 안내 문구를 여기서 직접 내린다.
+            if (InteractionPrompt.Instance != null)
+                InteractionPrompt.Instance.HideAll();
+
+            // 이전 라운드의 숫자가 화면에 남지 않도록 비운 상태로 갱신
+            RefreshStatus();
         }
     }
 }

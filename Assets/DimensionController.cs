@@ -56,9 +56,23 @@ namespace Squad
         public void SwitchPlayerDimension()
         {
             player.SwitchMyDimension();
-            
+
+            string layerName = player.myDimension == Dimension.Real ? "RealPlayer" : "FakePlayer";
+            SetLayerRecursively(player.gameObject, LayerMask.NameToLayer(layerName));
+
             foreach (var enemy in enemies)
                 enemy.SetRenderer(CompareDimension(enemy));
         }
-    }    
+
+        /// <summary>
+        /// 오브젝트와 그 모든 자식의 레이어를 재귀적으로 변경
+        /// </summary>
+        private void SetLayerRecursively(GameObject obj, int layer)
+        {
+            obj.layer = layer;
+
+            foreach (Transform child in obj.transform)
+                SetLayerRecursively(child.gameObject, layer);
+        }
+    }
 }

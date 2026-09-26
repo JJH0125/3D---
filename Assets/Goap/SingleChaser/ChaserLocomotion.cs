@@ -18,10 +18,6 @@ namespace Squad
     [RequireComponent(typeof(Rigidbody))]
     public class ChaserLocomotion : MonoBehaviour
     {
-        [Header("■ 필수 연결 — 비워두면 에러")]
-        [Tooltip("PathFinder")]
-        [SerializeField] private Pathfinder pathfinder;
-
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("Calm 상태일 때 이동 속도")]
         [SerializeField] private float calmMoveSpeed = 5f;
@@ -48,13 +44,13 @@ namespace Squad
         private Vector3 _lastPathTarget;
         private bool _hasWanderTarget;
         private Vector3 _wanderTarget;
+        private Pathfinder _pathfinder;
 
         private void Awake()
         {
             _rigidbody = GetComponent<Rigidbody>();
-            if (pathfinder == null)
-                pathfinder = FindObjectOfType<Pathfinder>();
-        }
+            _pathfinder = FindObjectOfType<Pathfinder>();
+        }    
 
         /// <summary>
         /// 플레이어의 위치와 도착 판정을 측정하는 반경을 받아
@@ -81,10 +77,8 @@ namespace Squad
                 _waypointIndex >= _path.Count ||
                 Vector3.Distance(_lastPathTarget, target) > repathThreshold)
             {
-                // pathfinder가 null인 실수가 일어났는지 검사 후,
-                // path를 (재)생성
-                _path = pathfinder != null ?
-                pathfinder.FindPath(_rigidbody.position, target) : null;
+                _path = _pathfinder != null ?
+                _pathfinder.FindPath(_rigidbody.position, target) : null;
                 _waypointIndex = 0;
                 _lastPathTarget = target;
             }
@@ -124,12 +118,12 @@ namespace Squad
                 /// 무작위 점을 뽑아내는 함수
                 /// 거기에 wanderRadius를 곱했으니
                 /// 반지름이 wanderRadius인 원 안의 무작위 점을 뽑아낸다.
-                /// 10번을 시도하고 
-                for (int i = 0; i < 10; i++)
+                /// 10번을 시도하고 도착할 수 있는 지점이 없으면 wanderTarget을 생성하지 않는다.
+                for (int i = 0; _pathfinder != null && i < 10; i++)
                 {
                     Vector2 r = Random.insideUnitCircle * wanderRadius;
                     Vector3 candidate = _rigidbody.position + new Vector3(r.x, 0f, r.y);
-                    if (pathfinder != null && pathfinder.IsWalkable(candidate))
+                    if (_pathfinder.IsWalkable(candidate))
                     {
                         _wanderTarget = candidate;
                         _hasWanderTarget = true;

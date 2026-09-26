@@ -50,6 +50,11 @@ namespace Squad
 
         private void Update()
         {
+            // 일시정지 중에는 상호작용하지 않는다.
+            // (소리 방출 타이머도 deltaTime이 0이라 어차피 진행되지 않는다)
+            if (Time.timeScale == 0f)
+                return;
+
             // 범위 안 + 아직 안 켜짐 + 키 입력 → 켜기
             if (_playerInRange && !IsActive && Input.GetKeyDown(interactKey))
                 Activate();
@@ -65,7 +70,8 @@ namespace Squad
 
             if (_emitTimer <= 0f)
             {
-                SoundEmitter.Emit(transform.position, SoundList.Generator, enemyLayer, Dimension.None, gameObject);
+                SoundEmitter.Emit(transform.position, 
+                SoundList.Generator, enemyLayer, Dimension.None, gameObject);
                 _emitTimer = emitInterval;
             }
         }

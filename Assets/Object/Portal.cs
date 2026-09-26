@@ -22,8 +22,17 @@ namespace Squad
 
         void Update()
         {
+            // 일시정지 중에는 상호작용하지 않는다.
+            if (Time.timeScale == 0f)
+                return;
+
             if (_playerInRange && Input.GetKeyDown(interactKey))
+            {
                 controller.SwitchPlayerDimension();
+
+                // 차원이 바뀌었고 플레이어가 아직 범위 안이므로 안내를 다시 띄운다.
+                ShowPrompt();
+            }
         }
 
         private void OnTriggerEnter(Collider other)
