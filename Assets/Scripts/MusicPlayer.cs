@@ -29,7 +29,7 @@ namespace Squad
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("배경음 볼륨")]
         [Range(0f, 1f)]
-        [SerializeField] private float volume = 0.5f;
+        [SerializeField] private float volume = 0.3f;
         [Tooltip("곡이 바뀔 때 줄어들고 커지는 데 걸리는 시간(초)")]
         [SerializeField] private float fadeDuration = 1f;
 
