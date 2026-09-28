@@ -40,7 +40,7 @@ namespace Squad
     }
 
     /// <summary>
-    /// 소리를 쓰는 쪽(발소리, 발전기 등)이 SoundList.Walking처럼 부르는 창구.
+    /// 소리를 쓰는 쪽(발소리, 발전기 등)이 SoundList.Walking의 형식으로 소리를 호출하는 게이트.
     /// 실제 값은 Resources/SoundLibrary 에셋에서 읽는다.
     /// 에셋이 없으면 경고를 한 번 띄우고 기본값으로 동작한다.
     /// </summary>
@@ -51,15 +51,20 @@ namespace Squad
 
         private static SoundLibrary Library
         {
+            /// Library 함수가 실행되면 (즉 게임에 돌입하고 플레이어가 첫 소리를 내면) _library를 채운다.
+            /// 즉 여기서 get 블록은 게임에 진입하기도 전에 소리 데이터를 가져오느라 로딩이 지연되는 현상을 방지하는 역할을 수행한다.
+            /// 또한 set 블록이 아예 없기 때문에 소리 데이터에 다른 값을 덮어씌우는 것이 소용없다.
             get
             {
                 if (_library == null)
                 {
                     _library = Resources.Load<SoundLibrary>(LibraryPath);
+                    /// asset 파일이 만들어져있지 않을 경우, 임시로 파일을 생성한다
                     if (_library == null)
                     {
                         Debug.LogWarning("[SoundList] Resources/SoundLibrary 에셋이 없어 기본값을 사용합니다. " +
                                          "Assets/Resources에서 Create > Squad > Sound Library로 만들어 주세요.");
+                        /// SoundLibrary.cs에 적힌 기본값들을 불러온다
                         _library = ScriptableObject.CreateInstance<SoundLibrary>();
                     }
                 }
@@ -67,6 +72,7 @@ namespace Squad
             }
         }
 
+        /// 외부에서 SoundList.Walking을 호출하면, 위의 Library 함수를 실행한다.
         public static Sound Walking => Library.Walking;
         public static Sound Running => Library.Running;
         public static Sound Generator => Library.Generator;

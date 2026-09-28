@@ -28,9 +28,9 @@ namespace Squad
         [Tooltip("발소리를 들을 수 있는 적의 레이어")]
         [SerializeField] private LayerMask enemyLayer;
         [Tooltip("움직이는 중인지 나타내는 파라미터 이름")]
-        [SerializeField] private string movingParam = "isRun";
+        [SerializeField] private string movingParameter = "isRun";
         [Tooltip("천천히 걷는 중인지 나타내는 파라미터 이름")]
-        [SerializeField] private string walkParam = "isWalk";
+        [SerializeField] private string walkParameter = "isWalk";
         [Tooltip("걷는 중 발소리 간격(초). 느리게 걸으니 더 길게")]
         [SerializeField] private float walkInterval = 0.5f;
         [Tooltip("뛰는 중 발소리 간격(초). 더 짧게 = 더 자주")]
@@ -52,8 +52,8 @@ namespace Squad
 
             player = GetComponent<Player>();
 
-            _movingHash = Animator.StringToHash(movingParam);
-            _walkHash = Animator.StringToHash(walkParam);
+            _movingHash = Animator.StringToHash(movingParameter);
+            _walkHash = Animator.StringToHash(walkParameter);
         }
 
         private void Update()
