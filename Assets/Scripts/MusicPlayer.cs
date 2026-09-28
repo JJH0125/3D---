@@ -82,9 +82,23 @@ namespace Squad
                     break;
 
                 case GameState.Playing:
+<<<<<<< HEAD
                     // 라운드를 새로 시작한 경우 처음부터 새 곡을 튼다.
                     // 일시정지에서 돌아온 경우엔 게임 곡이 이미 재생 중이므로 SwitchTo가 그대로 이어서 튼다.
                     SwitchTo(playingMusic);
+=======
+                    // 일시정지에서 돌아온 경우 멈춘 곳부터 이어서 튼다.
+                    if (_paused)
+                    {
+                        _source.UnPause();
+                        _paused = false;
+                    }
+                    // 라운드를 새로 시작한 경우 처음부터 새 곡을 튼다.
+                    else
+                    {
+                        SwitchTo(playingMusic);
+                    }
+>>>>>>> 014022c9997160f4247cfa47665e8e07911f9aed
                     break;
 
                 case GameState.Pause:
@@ -102,6 +116,11 @@ namespace Squad
         /// 같은 곡이 이미 재생 중이면 새로 틀지 않고 이어서 재생한다.
         private void SwitchTo(AudioClip clip)
         {
+<<<<<<< HEAD
+=======
+            _paused = false;
+
+>>>>>>> 014022c9997160f4247cfa47665e8e07911f9aed
             // 이미 그 곡이 나오고 있으면 패스
             // (페이드 아웃 도중 같은 곡으로 돌아온 경우: 페이드 아웃을 취소해 다시 키운다)
             if (clip != null && _source.clip == clip && _source.isPlaying)
@@ -117,8 +136,13 @@ namespace Squad
         private void UpdateFade()
         {
             // 일시정지 중에는 페이드를 멈춘다.
+<<<<<<< HEAD
             // 소리는 멈췄는데 페이드만 진행되면, 돌아왔을 때 곡이 이미 바뀌어 있게 된다.
             if (AudioListener.pause)
+=======
+            // Pause()도 isPlaying을 false로 만들기 때문에, 그대로 두면 곡이 멈춘 것으로 착각해 곡을 바꿔버린다.
+            if (_paused)
+>>>>>>> 014022c9997160f4247cfa47665e8e07911f9aed
                 return;
 
             /// unscaledDeltaTime을 사용하여 timeScale이 0인 상태에서도 페이드가 정상적으로 작동하도록 한다.
