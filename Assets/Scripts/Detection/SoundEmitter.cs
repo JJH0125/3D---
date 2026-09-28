@@ -24,10 +24,27 @@ namespace Squad
             int count = Physics.OverlapSphereNonAlloc(
                 position, sound.Radius, _hits, enemyLayer, QueryTriggerInteraction.Ignore);
 
-            if (count == 0)
-                return;
+            // 반경 안에 있다고 모두 들을 수 있는 건 아니다.
+            // 차원을 관통하지 못하는 소리는 같은 차원의 적이 있어야만 보고한다.
+            // (다른 차원의 적만 반경 안에 있을 때 보고하면, 블랙보드를 공유하는
+            //  멀리 있는 같은 차원의 적이 그 소리를 조사하러 오게 된다)
+            for (int i = 0; i < count; i++)
+            {
+                if (CanHear(_hits[i], sound, dimension))
+                {
+                    SquadBlackboard.Instance.ReportSound(position, sound, dimension, source);
+                    return;
+                }
+            }
+        }
 
-            SquadBlackboard.Instance.ReportSound(position, sound, dimension, source);
+        private static bool CanHear(Collider enemy, Sound sound, Dimension dimension)
+        {
+            if (sound.CanCrossDimension)
+                return true;
+
+            DimensionMember member = enemy.GetComponentInParent<DimensionMember>();
+            return member != null && member.Dimension == dimension;
         }
     }
 }

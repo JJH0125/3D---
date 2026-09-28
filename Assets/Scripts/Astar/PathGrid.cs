@@ -100,13 +100,52 @@ namespace Astar3D
             Vector3 local = worldPosition - transform.position
                             + new Vector3(gridWorldSize.x / 2, 0, gridWorldSize.y / 2);
 
-            // 맵 크기 대비 좌표의 비율(0~1 사이의 값)을 환산
-            float percentX = Mathf.Clamp01(local.x / gridWorldSize.x);
-            float percentY = Mathf.Clamp01(local.z / gridWorldSize.y);  // Z maps to grid Y
-
-            int x = Mathf.Clamp(Mathf.RoundToInt((_gridSizeX - 1) * percentX), 0, _gridSizeX - 1);
-            int y = Mathf.Clamp(Mathf.RoundToInt((_gridSizeY - 1) * percentY), 0, _gridSizeY - 1);
+            // 노드 한 칸의 지름으로 나눈 몫이 곧 몇 번째 칸인지다.
+            // (이전의 "비율 × (칸 수 - 1)을 반올림" 방식은 가장자리로 갈수록
+            //  최대 반 칸씩 어긋나서, 적이 벽 옆 칸에 서 있으면 벽 칸으로 읽혀
+            //  길찾기가 실패하고 그 자리에 멈추는 문제가 있었다)
+            int x = Mathf.Clamp(Mathf.FloorToInt(local.x / _nodeDiameter), 0, _gridSizeX - 1);
+            int y = Mathf.Clamp(Mathf.FloorToInt(local.z / _nodeDiameter), 0, _gridSizeY - 1);  // Z maps to grid Y
             return _grid[x, y];
+        }
+
+        /// <summary>
+        /// 좌표가 있는 노드가 벽이면, 주변에서 가장 가까운 walkable 노드를 찾아 반환한다.
+        /// 적이나 플레이어가 벽에 바짝 붙어 서면 그 칸이 벽으로 판정될 수 있는데,
+        /// 그대로 두면 길찾기가 실패해서 적이 멈춰 버리기 때문에 쓰는 방어 코드.
+        /// maxRing 칸 안에 walkable 노드가 없으면 null.
+        /// </summary>
+        public Node ClosestWalkableNode(Vector3 worldPosition, int maxRing = 2)
+        {
+            Node origin = NodeFromWorldPoint(worldPosition);
+            if (origin.Walkable)
+                return origin;
+
+            Node best = null;
+            float bestDist = float.MaxValue;
+
+            for (int dx = -maxRing; dx <= maxRing; dx++)
+            {
+                for (int dy = -maxRing; dy <= maxRing; dy++)
+                {
+                    int x = origin.GridX + dx;
+                    int y = origin.GridY + dy;
+                    if (x < 0 || x >= _gridSizeX || y < 0 || y >= _gridSizeY)
+                        continue;
+
+                    Node node = _grid[x, y];
+                    if (!node.Walkable)
+                        continue;
+
+                    float dist = (node.WorldPosition - worldPosition).sqrMagnitude;
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        best = node;
+                    }
+                }
+            }
+            return best;
         }
 
         public IEnumerable<Node> GetNeighbors(Node node)

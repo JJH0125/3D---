@@ -26,8 +26,12 @@ namespace Squad
         private const string StagePrefabPath = "Assets/Prefab/Stage.prefab";
         private const string MapRootName = "GeneratedMap";
 
+        /// <summary>
         /// 한 칸의 크기(m). 복도는 한 칸 폭이므로 곧 복도 폭이기도 하다.
-        private const float CellSize = 4f;
+        /// 맵 전체 크기는 Layout의 칸 수 × 이 값으로 정해진다.
+        /// 맵을 키우거나 줄이려면 이 값이 아니라 Layout에 줄/칸을 더하거나 빼면 된다.
+        /// </summary>
+        private const float CellSize = 4.35f;
         /// 벽 높이(m). 쿼터뷰 카메라에서 벽 뒤가 너무 많이 가려지지 않을 정도.
         private const float WallHeight = 4f;
 
@@ -37,6 +41,9 @@ namespace Squad
         ///   S 플레이어 시작   G 발전기   P 포탈   E 출구
         ///   R Real 적 시작    F Fake 적 시작
         ///
+        /// 바깥 테두리 벽은 맵 크기에 맞춰 자동으로 세워지므로 여기에는 적지 않는다.
+        /// 가장자리까지 닿은 # 줄은 바깥 벽에 그대로 붙는다.
+        ///
         /// 3x3 방 구조. 바깥쪽 8개 방이 한 바퀴 순환로를 이루고,
         /// 가운데 홀(포탈)은 서/동/남쪽 방과 연결된다.
         /// 출구가 있는 북쪽 방은 가운데 홀과 바로 이어지지 않아서
@@ -44,35 +51,35 @@ namespace Squad
         /// </summary>
         private static readonly string[] Layout =
         {
-            "#########################",
-            "#.......#...E...#.......#",
-            "#.G.....#.......#.......#",
-            "#.......#.#...#.#.......#",
-            "#...................R...#",
-            "#.......#.#...#.#.......#",
-            "#.......#.......#.......#",
-            "#.......#.......#.......#",
-            "####.###############.####",
-            "#.......#.......#.......#",
-            "#.......#.#...#.#.......#",
-            "#..##...#.......#...##..#",
-            "#...........P.........G.#",
-            "#..##...#.......#...##..#",
-            "#.......#.#...#.#.......#",
-            "#.......#.......#.......#",
-            "####.#######.#######.####",
-            "#.......#.......#.......#",
-            "#.......#.......#.......#",
-            "#.......#.......#.......#",
-            "#...................F...#",
-            "#.......#...S...#.......#",
-            "#.G.....#.......#.......#",
-            "#.......#.......#.......#",
-            "#########################",
+            ".......#...E...#.......",
+            ".G.....#.......#.......",
+            ".......#.#...#.#.......",
+            "...................R...",
+            ".......#.#...#.#.......",
+            ".......#.......#.......",
+            ".......#.......#.......",
+            "###.###############.###",
+            ".......#.......#.......",
+            ".......#.#...#.#.......",
+            "..##...#.......#...##..",
+            "...........P.........G.",
+            "..##...#.......#...##..",
+            ".......#.#...#.#.......",
+            ".......#.......#.......",
+            "###.#######.#######.###",
+            ".......#.......#.......",
+            ".......#.......#.......",
+            ".......#.......#.......",
+            "...................F...",
+            ".......#...S...#.......",
+            ".G.....#.......#.......",
+            ".......#.......#.......",
         };
 
         private static int Rows => Layout.Length;
         private static int Cols => Layout[0].Length;
+        private static float MapWidth => Cols * CellSize;
+        private static float MapDepth => Rows * CellSize;
 
         [MenuItem("Tools/Build Map")]
         public static void BuildMap()
@@ -90,7 +97,9 @@ namespace Squad
                 return;
             }
 
-            BuildWalls(wallLayer, FindFloorTop());
+            float floorTop = FindFloorTop();
+            ResizeFloor();
+            BuildWalls(wallLayer, floorTop);
             ConfigurePathGrid();
             PlaceStageObjects();
 
@@ -131,6 +140,19 @@ namespace Squad
             return 0.5f;
         }
 
+        /// 바닥을 맵 크기에 맞춘다. 높이(두께)는 그대로 둔다.
+        private static void ResizeFloor()
+        {
+            GameObject floor = GameObject.Find("Floor");
+            if (floor == null)
+                return;
+
+            Transform t = floor.transform;
+            Undo.RecordObject(t, "Resize Floor");
+            t.position = new Vector3(0f, t.position.y, 0f);
+            t.localScale = new Vector3(MapWidth, t.localScale.y, MapDepth);
+        }
+
         // ── 벽 ──────────────────────────────────────────────────────
 
         private static void BuildWalls(int wallLayer, float floorTop)
@@ -145,13 +167,20 @@ namespace Squad
             if (oldMap != null)
                 Undo.DestroyObjectImmediate(oldMap.gameObject);
 
-            // 기존에 임시로 세워 둔 벽은 새 배치와 겹치므로 끈다 (지우지는 않음)
-            Transform oldCube = parent != null ? parent.Find("Cube") : null;
-            if (oldCube != null && oldCube.gameObject.activeSelf)
+            // 기존에 손으로 세워 둔 벽(Cube, Wall, Wall (1) ...)은 맵 크기가 바뀌면
+            // 어긋나므로 끈다. 바깥 벽은 아래에서 맵 크기에 맞춰 새로 세운다. (지우지는 않음)
+            if (parent != null)
             {
-                Undo.RecordObject(oldCube.gameObject, "Disable old wall");
-                oldCube.gameObject.SetActive(false);
-                Debug.Log("[MapBuilder] 새 배치와 겹치는 WorldSpace/Cube를 비활성화했습니다.");
+                foreach (Transform child in parent)
+                {
+                    bool isOldWall = child.name == "Cube" || child.name.StartsWith("Wall");
+                    if (!isOldWall || !child.gameObject.activeSelf)
+                        continue;
+
+                    Undo.RecordObject(child.gameObject, "Disable old wall");
+                    child.gameObject.SetActive(false);
+                    Debug.Log($"[MapBuilder] 기존 벽 WorldSpace/{child.name}을(를) 비활성화했습니다.");
+                }
             }
 
             var root = new GameObject(MapRootName) { layer = wallLayer };
@@ -163,6 +192,8 @@ namespace Squad
             // 1) 가로로 2칸 이상 이어진 벽을 먼저 합치고
             // 2) 남은 칸은 세로로 이어서 합친다.
             var used = new bool[Rows, Cols];
+
+            BuildOuterWalls(root.transform, wallLayer, floorTop);
 
             for (int r = 0; r < Rows; r++)
             {
@@ -200,6 +231,23 @@ namespace Squad
             }
         }
 
+        /// <summary>
+        /// 맵 바깥을 한 칸 두께의 벽으로 두른다.
+        /// 남북 벽을 모서리까지 길게 늘여서 네 모서리에 틈이 생기지 않게 한다.
+        /// </summary>
+        private static void BuildOuterWalls(Transform parent, int layer, float floorTop)
+        {
+            float y = floorTop + WallHeight * 0.5f;
+            float t = CellSize;
+            float halfW = MapWidth * 0.5f;
+            float halfD = MapDepth * 0.5f;
+
+            CreateBox(parent, layer, "OuterWall N", new Vector3(0f, y, halfD + t * 0.5f), new Vector3(MapWidth + t * 2f, WallHeight, t));
+            CreateBox(parent, layer, "OuterWall S", new Vector3(0f, y, -halfD - t * 0.5f), new Vector3(MapWidth + t * 2f, WallHeight, t));
+            CreateBox(parent, layer, "OuterWall E", new Vector3(halfW + t * 0.5f, y, 0f), new Vector3(t, WallHeight, MapDepth));
+            CreateBox(parent, layer, "OuterWall W", new Vector3(-halfW - t * 0.5f, y, 0f), new Vector3(t, WallHeight, MapDepth));
+        }
+
         /// <summary>row, col 칸부터 rowCount x colCount 칸을 덮는 벽 하나를 만든다.</summary>
         private static void CreateWall(Transform parent, int layer, float floorTop,
                                        int row, int col, int rowCount, int colCount)
@@ -210,17 +258,25 @@ namespace Squad
                 floorTop + WallHeight * 0.5f,
                 first.z - (rowCount - 1) * CellSize * 0.5f);
 
-            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wall.name = "Wall";
-            wall.layer = layer;
-            wall.transform.SetParent(parent, false);
-            wall.transform.position = center;
-            wall.transform.localScale = new Vector3(colCount * CellSize, WallHeight, rowCount * CellSize);
+            CreateBox(parent, layer, "Wall", center, new Vector3(colCount * CellSize, WallHeight, rowCount * CellSize));
+        }
+
+        private static void CreateBox(Transform parent, int layer, string name, Vector3 center, Vector3 size)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = name;
+            box.layer = layer;
+            box.transform.SetParent(parent, false);
+            box.transform.position = center;
+            box.transform.localScale = size;
         }
 
         // ── 길찾기 그리드 ───────────────────────────────────────────
 
+        /// <summary>
         /// PathGrid가 맵 전체를 덮도록 크기를 맞춘다.
+        /// 노드 수는 면적에 비례하므로, 맵을 크게 키우면 길찾기 비용도 함께 커진다.
+        /// </summary>
         private static void ConfigurePathGrid()
         {
             PathGrid grid = Object.FindObjectOfType<PathGrid>();
@@ -231,7 +287,7 @@ namespace Squad
             }
 
             var so = new SerializedObject(grid);
-            so.FindProperty("gridWorldSize").vector2Value = new Vector2(Cols * CellSize, Rows * CellSize);
+            so.FindProperty("gridWorldSize").vector2Value = new Vector2(MapWidth, MapDepth);
             so.ApplyModifiedProperties();
 
             if (grid.transform.position != Vector3.zero)
@@ -362,11 +418,26 @@ namespace Squad
         }
 
         /// <summary>
-        /// 피벗이 모델 중심에 있지 않은 오브젝트(발전기, 출구 모델 등)를 위해
-        /// 눈에 보이는 모습(Renderer bounds)의 중심이 칸 중심에 오도록 XZ만 옮긴다.
+        /// 피벗이 모델 중심에 있지 않은 오브젝트(발전기, 출구 모델 등)를 칸 중심으로 옮긴다. XZ만 옮긴다.
+        ///
+        /// 상호작용 범위(트리거 BoxCollider)가 있으면 그 중심을 칸 중심에 맞춘다.
+        /// 플레이어가 실제로 닿아야 하는 곳이 트리거이기 때문이다.
+        /// (Renderer bounds는 프리팹을 에디터에서 열었을 때 정확하지 않을 수 있어,
+        ///  트리거 중심은 Transform으로 직접 계산한다)
+        /// 트리거가 없으면 눈에 보이는 모습(Renderer bounds)의 중심을 맞춘다.
         /// </summary>
         private static void MoveByBounds(Transform t, Vector3 cell)
         {
+            BoxCollider trigger = t.GetComponents<BoxCollider>().FirstOrDefault(b => b.isTrigger);
+            if (trigger != null)
+            {
+                Vector3 triggerCenter = t.TransformPoint(trigger.center);
+                Vector3 shift = cell - triggerCenter;
+                shift.y = 0f;
+                t.position += shift;
+                return;
+            }
+
             Renderer[] renderers = t.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0)
             {

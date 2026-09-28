@@ -25,11 +25,12 @@ namespace Astar3D
         /// </summary>
         public List<Vector3> FindPath(Vector3 startPos, Vector3 targetPos)
         {
-            Node startNode = _grid.NodeFromWorldPoint(startPos);
-            Node targetNode = _grid.NodeFromWorldPoint(targetPos);
+            // 벽에 바짝 붙어 있어서 그 칸이 벽으로 판정되면 가장 가까운 빈 칸에서 출발/도착한다.
+            Node startNode = _grid.ClosestWalkableNode(startPos);
+            Node targetNode = _grid.ClosestWalkableNode(targetPos);
 
-            // 출발점과 도착점 둘 중 하나라도 벽이라면 경로 탐색 x
-            if (!startNode.Walkable || !targetNode.Walkable)
+            // 주변에도 빈 칸이 없다면 경로 탐색 x
+            if (startNode == null || targetNode == null)
                 return null;
 
             // 계산을 수행할 노드를 넣을 집합

@@ -55,13 +55,16 @@ namespace Squad
             if (Time.timeScale == 0f)
                 return;
 
-            // 범위 안 + 아직 안 켜짐 + 키 입력 → 켜기
-            if (_playerInRange && !IsActive && Input.GetKeyDown(interactKey))
-                Activate();
-
-            // (디버깅 전용) 범위 안 + 켜짐 + 키 입력 → 끄기
-            if (_playerInRange && IsActive && Input.GetKeyDown(interactKey))
-                Deactivate();
+            // 범위 안 + 키 입력 → 꺼져 있으면 켜고, 켜져 있으면 끈다(끄기는 디버깅 전용).
+            // 두 검사를 따로 두면 켠 직후 같은 프레임에 IsActive가 true로 보여서
+            // 곧바로 다시 꺼져 버리므로 한 번의 입력에는 하나만 처리한다.
+            if (_playerInRange && Input.GetKeyDown(interactKey))
+            {
+                if (!IsActive)
+                    Activate();
+                else
+                    Deactivate();
+            }
 
             if (!IsActive)
                 return;
@@ -139,6 +142,9 @@ namespace Squad
         public void Deactivate()
         {
             IsActive = false;
+
+            // 꺼진 것도 화면의 발전기 수에 반영한다.
+            GameManager.Instance.CheckExit();
 
             // 꺼졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
             if (_playerInRange)

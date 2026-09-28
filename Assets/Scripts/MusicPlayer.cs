@@ -1,0 +1,147 @@
+using UnityEngine;
+
+namespace Squad
+{
+    /// <summary>
+    /// 게임 상태에 맞춰 배경음을 바꿔 튼다.
+    ///   Title          타이틀 배경음
+    ///   Playing        게임 배경음 (일시정지에서 돌아오면 멈춘 곳부터 이어서)
+    ///   Pause          배경음 일시정지
+    ///   GameOver/Result 배경음을 서서히 끈다
+    ///
+    /// GameManager의 상태를 매 프레임 확인하다가 바뀌었을 때만 반응한다.
+    /// 곡을 바꿀 때는 이전 곡을 서서히 줄인 뒤 새 곡을 서서히 키운다.
+    /// 타이틀·일시정지 중에는 timeScale이 0이므로 페이드는 실제 시간(unscaled)으로 계산한다.
+    ///
+    /// 씬 구성:
+    ///   씬에 빈 오브젝트를 만들어 이 스크립트를 붙이고(AudioSource는 자동 추가),
+    ///   두 배경음 클립을 연결한다. 씬에 하나만 둔다.
+    /// </summary>
+    [RequireComponent(typeof(AudioSource))]
+    public class MusicPlayer : MonoBehaviour
+    {
+        [Header("■ 필수 연결 — 비워두면 에러")]
+        [Tooltip("타이틀 화면 배경음")]
+        [SerializeField] private AudioClip titleMusic;
+        [Tooltip("게임 플레이 중 배경음")]
+        [SerializeField] private AudioClip playingMusic;
+
+        [Header("○ 튜닝 값 — 자유롭게 조절")]
+        [Tooltip("배경음 볼륨")]
+        [Range(0f, 1f)]
+        [SerializeField] private float volume = 0.5f;
+        [Tooltip("곡이 바뀔 때 줄어들고 커지는 데 걸리는 시간(초)")]
+        [SerializeField] private float fadeDuration = 1f;
+
+        private AudioSource _source;
+        private bool _hasState;
+        private GameState _lastState;
+
+        // 곡 전환 중인지, 전환 후 틀 곡 (null이면 끄기)
+        private bool _switching;
+        private AudioClip _nextClip;
+        // 일시정지로 멈춘 상태인지 (이어서 틀기 위함)
+        private bool _paused;
+
+        private void Awake()
+        {
+            _source = GetComponent<AudioSource>();
+            _source.playOnAwake = false;
+            _source.loop = true;
+            _source.volume = 0f;
+        }
+
+        private void Update()
+        {
+            if (GameManager.Instance == null)
+                return;
+
+            GameState state = GameManager.Instance.CurrentState;
+            if (!_hasState || state != _lastState)
+            {
+                _hasState = true;
+                _lastState = state;
+                OnStateChanged(state);
+            }
+
+            UpdateFade();
+        }
+
+        private void OnStateChanged(GameState state)
+        {
+            switch (state)
+            {
+                case GameState.Title:
+                    SwitchTo(titleMusic);
+                    break;
+
+                case GameState.Playing:
+                    // 일시정지에서 돌아온 경우 멈춘 곳부터 이어서 튼다.
+                    if (_paused)
+                    {
+                        _source.UnPause();
+                        _paused = false;
+                    }
+                    else
+                    {
+                        SwitchTo(playingMusic);
+                    }
+                    break;
+
+                case GameState.Pause:
+                    _source.Pause();
+                    _paused = true;
+                    break;
+
+                case GameState.GameOver:
+                case GameState.Result:
+                    SwitchTo(null);
+                    break;
+            }
+        }
+
+        /// 다음에 틀 곡을 정한다. 실제 전환은 UpdateFade에서 서서히 이뤄진다.
+        private void SwitchTo(AudioClip clip)
+        {
+            _paused = false;
+
+            // 이미 그 곡이 나오고 있으면 처음부터 다시 틀지 않는다.
+            if (clip != null && _source.clip == clip && _source.isPlaying)
+                return;
+
+            _nextClip = clip;
+            _switching = true;
+        }
+
+        private void UpdateFade()
+        {
+            float step = fadeDuration > 0f ? volume * Time.unscaledDeltaTime / fadeDuration : volume;
+
+            if (_switching)
+            {
+                // 1) 이전 곡이 나오고 있으면 먼저 소리를 0까지 줄인다.
+                if (_source.isPlaying && _source.volume > 0f)
+                {
+                    _source.volume = Mathf.MoveTowards(_source.volume, 0f, step);
+                    return;
+                }
+
+                // 2) 다 줄었으면 곡을 바꾸고, 새 곡은 0부터 시작한다.
+                _source.Stop();
+                _source.clip = _nextClip;
+                _switching = false;
+
+                if (_nextClip != null)
+                {
+                    _source.volume = 0f;
+                    _source.Play();
+                }
+                return;
+            }
+
+            // 3) 새 곡은 목표 볼륨까지 서서히 키운다. (인스펙터에서 볼륨을 바꿔도 따라간다)
+            if (_source.isPlaying)
+                _source.volume = Mathf.MoveTowards(_source.volume, volume, step);
+        }
+    }
+}
