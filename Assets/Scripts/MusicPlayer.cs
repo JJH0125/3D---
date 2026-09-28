@@ -6,7 +6,7 @@ namespace Squad
     /// 게임 상태에 맞춰 배경음을 바꿔 튼다.
     ///   Title          타이틀 배경음
     ///   Playing        게임 배경음 (일시정지에서 돌아오면 멈춘 곳부터 이어서)
-    ///   Pause          배경음 일시정지
+    ///   Pause          배경음 일시정지 (GameManager가 AudioListener.pause로 처리)
     ///   GameOver/Result 배경음을 서서히 끈다
     ///
     /// GameManager의 currentState를 매 프레임 확인하면서, currentState가 바뀌었을 때만 반응한다.
@@ -42,8 +42,6 @@ namespace Squad
         // 새 곡의 페이드 인은 여기 포함되지 않는다. (UpdateFade에서 항상 목표 볼륨을 따라감)
         private bool _fadingOut;
         private AudioClip _nextClip;
-        // 일시정지로 멈춘 상태인지 (이어서 틀기 위함)
-        private bool _paused;
 
         private void Awake()
         {
@@ -84,22 +82,13 @@ namespace Squad
                     break;
 
                 case GameState.Playing:
-                    // 일시정지에서 돌아온 경우 멈춘 곳부터 이어서 튼다.
-                    if (_paused)
-                    {
-                        _source.UnPause();
-                        _paused = false;
-                    }
                     // 라운드를 새로 시작한 경우 처음부터 새 곡을 튼다.
-                    else
-                    {
-                        SwitchTo(playingMusic);
-                    }
+                    // 일시정지에서 돌아온 경우엔 게임 곡이 이미 재생 중이므로 SwitchTo가 그대로 이어서 튼다.
+                    SwitchTo(playingMusic);
                     break;
 
                 case GameState.Pause:
-                    _source.Pause();
-                    _paused = true;
+                    // 배경음 정지와 재개는 GameManager가 AudioListener.pause로 처리한다.
                     break;
 
                 case GameState.GameOver:
@@ -113,8 +102,6 @@ namespace Squad
         /// 같은 곡이 이미 재생 중이면 새로 틀지 않고 이어서 재생한다.
         private void SwitchTo(AudioClip clip)
         {
-            _paused = false;
-
             // 이미 그 곡이 나오고 있으면 패스
             // (페이드 아웃 도중 같은 곡으로 돌아온 경우: 페이드 아웃을 취소해 다시 키운다)
             if (clip != null && _source.clip == clip && _source.isPlaying)
@@ -130,8 +117,8 @@ namespace Squad
         private void UpdateFade()
         {
             // 일시정지 중에는 페이드를 멈춘다.
-            // Pause()도 isPlaying을 false로 만들기 때문에, 그대로 두면 곡이 멈춘 것으로 착각해 곡을 바꿔버린다.
-            if (_paused)
+            // 소리는 멈췄는데 페이드만 진행되면, 돌아왔을 때 곡이 이미 바뀌어 있게 된다.
+            if (AudioListener.pause)
                 return;
 
             /// unscaledDeltaTime을 사용하여 timeScale이 0인 상태에서도 페이드가 정상적으로 작동하도록 한다.

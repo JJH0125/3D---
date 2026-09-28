@@ -17,7 +17,11 @@ namespace Squad
              // 소리 반경 표시 — 들은 적이 없어도 보여줘야 하므로 맨 앞에서 호출
             if (SoundRingDisplay.Instance != null)
                 SoundRingDisplay.Instance.Show(position, sound);
-            
+
+            // 효과음 재생 — 반경 표시와 같은 이유로 들은 적이 없어도 재생한다
+            if (SfxPlayer.Instance != null)
+                SfxPlayer.Instance.PlayAt(sound.Clip, position);
+
             if (SquadBlackboard.Instance == null)
                 return;
             

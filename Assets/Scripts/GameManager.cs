@@ -162,6 +162,10 @@ namespace Squad
         {
             CurrentState = newState;
 
+            // 일시정지 중에는 게임 속 모든 소리(배경음, 효과음)를 한 번에 멈춘다.
+            // ignoreListenerPause가 켜진 AudioSource(SfxPlayer의 UI 소리)만 계속 들린다.
+            AudioListener.pause = newState == GameState.Pause;
+
             switch (CurrentState)
             {
                 case GameState.Title:

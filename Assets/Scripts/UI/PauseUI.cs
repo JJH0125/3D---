@@ -15,8 +15,10 @@ namespace Squad
         public void OnClickRestart()
         {
             // GameManager가 timeScale을 0으로 만들었으므로 씬 전환 전 원상복구
-            Time.timeScale = 1f; 
-            
+            Time.timeScale = 1f;
+            // AudioListener.pause도 씬을 다시 불러와도 유지되므로 함께 원상복구
+            AudioListener.pause = false;
+
             // 현재 씬을 다시 로드하여 초기화 (씬 이름이나 인덱스에 맞게 수정)
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
