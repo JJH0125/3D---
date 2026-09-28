@@ -9,7 +9,7 @@ namespace Squad
     ///   Pause          배경음 일시정지
     ///   GameOver/Result 배경음을 서서히 끈다
     ///
-    /// GameManager의 상태를 매 프레임 확인하다가 바뀌었을 때만 반응한다.
+    /// GameManager의 currentState를 매 프레임 확인하면서, currentState가 바뀌었을 때만 반응한다.
     /// 곡을 바꿀 때는 이전 곡을 서서히 줄인 뒤 새 곡을 서서히 키운다.
     /// 타이틀·일시정지 중에는 timeScale이 0이므로 페이드는 실제 시간(unscaled)으로 계산한다.
     ///
@@ -34,11 +34,13 @@ namespace Squad
         [SerializeField] private float fadeDuration = 1f;
 
         private AudioSource _source;
+        /// 비교할 이전 상태가 존재하지 않는, 게임 시작 첫 프레임만을 위한 bool 값.
         private bool _hasState;
         private GameState _lastState;
 
-        // 곡 전환 중인지, 전환 후 틀 곡 (null이면 끄기)
-        private bool _switching;
+        // 곡을 바꾸려고 이전 곡을 줄이는 중인지, 다 줄인 뒤 틀 곡 (null이면 끄기)
+        // 새 곡의 페이드 인은 여기 포함되지 않는다. (UpdateFade에서 항상 목표 볼륨을 따라감)
+        private bool _fadingOut;
         private AudioClip _nextClip;
         // 일시정지로 멈춘 상태인지 (이어서 틀기 위함)
         private bool _paused;
@@ -46,8 +48,11 @@ namespace Squad
         private void Awake()
         {
             _source = GetComponent<AudioSource>();
+            /// 씬이 시작되어도 저절로 재생하지 않음
             _source.playOnAwake = false;
+            /// 배경음을 반복 재생
             _source.loop = true;
+            /// 첫 곡도 0에서 서서히 커지도록 볼륨을 0으로 시작
             _source.volume = 0f;
         }
 
@@ -67,6 +72,9 @@ namespace Squad
             UpdateFade();
         }
 
+        /// <summary>
+        /// 상태별 처리. 실제 곡 전환은 UpdateFade에서 서서히 이뤄진다.
+        /// </summary>
         private void OnStateChanged(GameState state)
         {
             switch (state)
@@ -82,6 +90,7 @@ namespace Squad
                         _source.UnPause();
                         _paused = false;
                     }
+                    // 라운드를 새로 시작한 경우 처음부터 새 곡을 튼다.
                     else
                     {
                         SwitchTo(playingMusic);
@@ -101,23 +110,34 @@ namespace Squad
         }
 
         /// 다음에 틀 곡을 정한다. 실제 전환은 UpdateFade에서 서서히 이뤄진다.
+        /// 같은 곡이 이미 재생 중이면 새로 틀지 않고 이어서 재생한다.
         private void SwitchTo(AudioClip clip)
         {
             _paused = false;
 
-            // 이미 그 곡이 나오고 있으면 처음부터 다시 틀지 않는다.
+            // 이미 그 곡이 나오고 있으면 패스
+            // (페이드 아웃 도중 같은 곡으로 돌아온 경우: 페이드 아웃을 취소해 다시 키운다)
             if (clip != null && _source.clip == clip && _source.isPlaying)
+            {
+                _fadingOut = false;
                 return;
+            }
 
             _nextClip = clip;
-            _switching = true;
+            _fadingOut = true;
         }
 
         private void UpdateFade()
         {
+            // 일시정지 중에는 페이드를 멈춘다.
+            // Pause()도 isPlaying을 false로 만들기 때문에, 그대로 두면 곡이 멈춘 것으로 착각해 곡을 바꿔버린다.
+            if (_paused)
+                return;
+
+            /// unscaledDeltaTime을 사용하여 timeScale이 0인 상태에서도 페이드가 정상적으로 작동하도록 한다.
             float step = fadeDuration > 0f ? volume * Time.unscaledDeltaTime / fadeDuration : volume;
 
-            if (_switching)
+            if (_fadingOut)
             {
                 // 1) 이전 곡이 나오고 있으면 먼저 소리를 0까지 줄인다.
                 if (_source.isPlaying && _source.volume > 0f)
@@ -129,7 +149,7 @@ namespace Squad
                 // 2) 다 줄었으면 곡을 바꾸고, 새 곡은 0부터 시작한다.
                 _source.Stop();
                 _source.clip = _nextClip;
-                _switching = false;
+                _fadingOut = false;
 
                 if (_nextClip != null)
                 {
@@ -139,7 +159,8 @@ namespace Squad
                 return;
             }
 
-            // 3) 새 곡은 목표 볼륨까지 서서히 키운다. (인스펙터에서 볼륨을 바꿔도 따라간다)
+            // 3) 새 곡은 목표 볼륨까지 서서히 키운다.
+            // 또한 인스펙터에서 볼륨을 움직이면 그에 맞춰 실제 볼륨을 서서히 조절한다.
             if (_source.isPlaying)
                 _source.volume = Mathf.MoveTowards(_source.volume, volume, step);
         }
