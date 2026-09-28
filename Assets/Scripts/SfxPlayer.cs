@@ -34,7 +34,9 @@ namespace Squad
         [Tooltip("동시에 재생할 수 있는 3D 효과음의 최대 개수")]
         [SerializeField] private int poolSize = 8;
 
+        // UI용 AudioSource
         private AudioSource _uiSource;
+        // 월드용 AudioSource
         private AudioSource[] _worldSources;
 
         private void Awake()
@@ -46,23 +48,32 @@ namespace Squad
             }
             Instance = this;
 
-            // UI 소리는 일시정지 화면의 버튼 소리도 나야 하므로 AudioListener.pause를 무시한다.
+            /// UI용 AudioSource의 설정.
+            /// 하나밖에 필요하지 않으며, 아래의 줄을 통해 직접 생성되어 추가된다.
             _uiSource = gameObject.AddComponent<AudioSource>();
+            /// 씬이 시작되어도 저절로 재생하지 않음
             _uiSource.playOnAwake = false;
+            /// 2D 상의 소리이기 때문에 발생 위치에 상관없이 같은 크기로 들린다.
             _uiSource.spatialBlend = 0f;
+            /// UI용 소리는 Manager가 일시정지를 통해 재생을 막아도 재생되어야 하는 유일한 소리
+            /// 따라서 Manager의 정지 명령을 무시한다.
             _uiSource.ignoreListenerPause = true;
 
+            /// 월드용은 따로 함수를 통해 만든다.
             _worldSources = new AudioSource[poolSize];
             for (int i = 0; i < poolSize; i++)
                 _worldSources[i] = CreateWorldSource(i);
         }
 
+        /// <summary>
+        /// 월드용 AudioSource를 만드는 함수.
+        /// </summary>
         private AudioSource CreateWorldSource(int index)
         {
-            var go = new GameObject("SfxSource_" + index);
-            go.transform.SetParent(transform, false);
+            var sourceObject = new GameObject("SfxSource_" + index);
+            sourceObject.transform.SetParent(transform, false);
 
-            var source = go.AddComponent<AudioSource>();
+            var source = sourceObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 1f;   // 완전한 3D: 위치에 따라 좌우와 크기가 달라진다
             // 쿼터뷰라 카메라(AudioListener)가 캐릭터와 늘 떨어져 있으므로,

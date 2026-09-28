@@ -82,10 +82,10 @@ namespace Squad
 
         private Ring CreateRing(int index)
         {
-            var go = new GameObject("SoundRing_" + index);
-            go.transform.SetParent(transform, false);
+            var ringObject = new GameObject("SoundRing_" + index);
+            ringObject.transform.SetParent(transform, false);
 
-            var line = go.AddComponent<LineRenderer>();
+            var line = ringObject.AddComponent<LineRenderer>();
             line.useWorldSpace = true;
             line.loop = true;
             line.positionCount = segments;
