@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Squad
 {
@@ -11,6 +12,11 @@ namespace Squad
     /// "계속 나는" 소리이므로, 켜진 동안 반복해서 방출한다.)
     ///
     /// "발전기를 켜야 진행되지만, 켜면 소리로 노출된다"는 긴장이 핵심이다.
+    ///
+    /// 플레이어에게 들리는 작동음은 Emit(적에게 알리기)과 따로 재생한다.
+    /// Emit은 0.5초마다 호출되므로 거기서 효과음을 틀면 소리가 계속 겹친다.
+    /// 그래서 이 오브젝트에 반복 재생용 AudioSource를 두고, 켜고 끌 때 재생·정지한다.
+    /// 발전기가 파괴되면(라운드 종료) 소리도 함께 사라지고, 일시정지는 AudioListener.pause가 처리한다.
     ///
     /// 씬 구성:
     ///   - 이 오브젝트에 Collider를 하나 더 두고 Is Trigger를 켠다
@@ -29,23 +35,48 @@ namespace Squad
         [SerializeField] private bool startsActive = false;
         [Tooltip("상호작용할 수 있는 플레이어 대상 레이어")]
         [SerializeField] private LayerMask playerLayer;
-        [Tooltip("범위 안에서 화면에 띄울 안내 문구")]
-        [SerializeField] private string promptMessage1 = "[E] 발전기 켜기";
-        [SerializeField] private string promptMessage2 = "[E] 발전기 끄기";
-
+        [Tooltip("꺼진 발전기의 범위 안에서 화면에 띄울 안내 문구")]
+        [FormerlySerializedAs("promptMessage1")]    // 이름을 바꿔도 프리팹에 저장된 문구를 유지
+        [SerializeField] private string promptMessage = "[E] 발전기 켜기";
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
+        [Tooltip("켤 때 한 번 나는 소리(딸깍). 적에게는 들리지 않는다")]
+        [SerializeField] private AudioClip activationSound;
+        [Tooltip("작동 중 반복 재생할 소리. 비워두면 적에게만 들리고 플레이어에게는 들리지 않는다")]
+        [SerializeField] private AudioClip activeSound;
+        [Tooltip("작동음 볼륨")]
+        [Range(0f, 1f)]
+        [SerializeField] private float activeVolume = 0.6f;
+        [Tooltip("이 거리(m)까지는 최대 크기로 들린다")]
+        [SerializeField] private float minDistance = 10f;
+        [Tooltip("이 거리(m)부터는 들리지 않는다")]
+        [SerializeField] private float maxDistance = 40f;
 
         // 작동 중인지 여부. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
         public bool IsActive { get; private set; }
         private float _emitTimer;
         // 작동시킬 수 있는 범위 내에 플레이어가 들어와있는지 여부.
         private bool _playerInRange;
+        // 작동음을 반복 재생할 AudioSource. Awake에서 직접 만든다.
+        private AudioSource _activeSource;
+
+        private void Awake()
+        {
+            // 기존 프리팹에도 따로 붙일 필요가 없도록 코드에서 만든다.
+            _activeSource = gameObject.AddComponent<AudioSource>();
+            _activeSource.playOnAwake = false;
+            _activeSource.loop = true;
+            _activeSource.clip = activeSound;
+            // SfxPlayer의 월드 소리와 같은 3D 설정 (쿼터뷰라 거리를 넉넉히 잡은 직선 감쇠)
+            _activeSource.spatialBlend = 1f;
+            _activeSource.rolloffMode = AudioRolloffMode.Linear;
+        }
 
         private void Start()
         {
             IsActive = startsActive;
             GameManager.Instance.AddGenerator(this);
+            UpdateActiveSound();
         }
 
         private void Update()
@@ -55,16 +86,9 @@ namespace Squad
             if (Time.timeScale == 0f)
                 return;
 
-            // 범위 안 + 키 입력 → 꺼져 있으면 켜고, 켜져 있으면 끈다(끄기는 디버깅 전용).
-            // 두 검사를 따로 두면 켠 직후 같은 프레임에 IsActive가 true로 보여서
-            // 곧바로 다시 꺼져 버리므로 한 번의 입력에는 하나만 처리한다.
-            if (_playerInRange && Input.GetKeyDown(interactKey))
-            {
-                if (!IsActive)
-                    Activate();
-                else
-                    Deactivate();
-            }
+            // 범위 안 + 꺼져 있음 + 키 입력 → 켠다. 한 번 켠 발전기는 플레이어가 끌 수 없다.
+            if (_playerInRange && !IsActive && Input.GetKeyDown(interactKey))
+                Activate();
 
             if (!IsActive)
                 return;
@@ -101,13 +125,12 @@ namespace Squad
 
         private void ShowPrompt()
         {
+            // 켜진 발전기는 더 할 수 있는 게 없으므로 안내를 띄우지 않는다.
+            if (IsActive)
+                return;
+
             if (InteractionPrompt.Instance != null)
-            {
-                if (!IsActive)
-                    InteractionPrompt.Instance.Show(this, promptMessage1);
-                else
-                    InteractionPrompt.Instance.Show(this, promptMessage2);
-            }
+                InteractionPrompt.Instance.Show(this, promptMessage);
         }
 
         private void HidePrompt()
@@ -130,18 +153,27 @@ namespace Squad
             IsActive = true;
             
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
+            UpdateActiveSound();
+
+            // 딸깍 소리는 플레이어에게만 들려야 하므로 Emit을 거치지 않고 SfxPlayer로 직접 재생한다.
+            if (SfxPlayer.Instance != null)
+                SfxPlayer.Instance.PlayAt(activationSound, transform.position);
 
             GameManager.Instance.CheckExit();    // 발전기가 켜질 때마다 manager가 출구 활성화를 검사.
 
-            // 켜졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
+            // 켜진 뒤에는 할 수 있는 게 없으므로 띄워 둔 "켜기" 안내를 내린다.
             if (_playerInRange)
-                ShowPrompt();
+                HidePrompt();
         }
 
-        /// <summary>발전기를 끈다.</summary>
+        /// <summary>
+        /// 발전기를 끈다. 플레이어는 끌 수 없고, 코드에서만 호출한다.
+        /// (나중에 추격자가 발전기를 끄는 기능 등에 쓸 수 있도록 남겨 둔다)
+        /// </summary>
         public void Deactivate()
         {
             IsActive = false;
+            UpdateActiveSound();
 
             // 꺼진 것도 화면의 발전기 수에 반영한다.
             GameManager.Instance.CheckExit();
@@ -149,6 +181,26 @@ namespace Squad
             // 꺼졌고 플레이어가 아직 범위 안이면 다시 안내를 띄운다.
             if (_playerInRange)
                 ShowPrompt();
+        }
+
+        // 켜져 있으면 작동음을 틀고, 꺼져 있으면 멈춘다.
+        private void UpdateActiveSound()
+        {
+            if (activeSound == null)
+                return;
+
+            if (IsActive)
+            {
+                // 인스펙터에서 바꾼 값이 다음에 켤 때 반영되도록 재생할 때마다 넣는다.
+                _activeSource.volume = activeVolume;
+                _activeSource.minDistance = minDistance;
+                _activeSource.maxDistance = maxDistance;
+                _activeSource.Play();
+            }
+            else
+            {
+                _activeSource.Stop();
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Squad
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("효과음 볼륨")]
         [Range(0f, 1f)]
-        [SerializeField] private float volume = 1f;
+        [SerializeField] private float volume = 0.5f;
         [Tooltip("이 거리(m)까지는 최대 크기로 들린다")]
         [SerializeField] private float minDistance = 10f;
         [Tooltip("이 거리(m)부터는 들리지 않는다")]
@@ -59,7 +59,7 @@ namespace Squad
             /// 따라서 Manager의 정지 명령을 무시한다.
             _uiSource.ignoreListenerPause = true;
 
-            /// 월드용은 따로 함수를 통해 만든다.
+            /// 월드용 또한 아래의 코드를 통해 직접 생성되어 추가된다.
             _worldSources = new AudioSource[poolSize];
             for (int i = 0; i < poolSize; i++)
                 _worldSources[i] = CreateWorldSource(i);
@@ -70,7 +70,9 @@ namespace Squad
         /// </summary>
         private AudioSource CreateWorldSource(int index)
         {
+            /// SfxSource_0 ~ SfxSource_7까지 총 8개의 오브젝트가 생성됨
             var sourceObject = new GameObject("SfxSource_" + index);
+            /// 8개의 오브젝트들이 SfxPlayer의 자식으로 들어옴
             sourceObject.transform.SetParent(transform, false);
 
             var source = sourceObject.AddComponent<AudioSource>();
@@ -113,8 +115,10 @@ namespace Squad
             AudioSource oldest = _worldSources[0];
             foreach (AudioSource source in _worldSources)
             {
-                if (!source.isPlaying) return source;
-                if (source.time > oldest.time) oldest = source;
+                if (!source.isPlaying)
+                    return source;
+                if (source.time > oldest.time)
+                    oldest = source;
             }
             return oldest;
         }
