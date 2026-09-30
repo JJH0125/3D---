@@ -86,7 +86,7 @@ namespace Squad
             if (Time.timeScale == 0f)
                 return;
 
-            // 범위 안 + 꺼져 있음 + 키 입력 → 켠다. 한 번 켠 발전기는 플레이어가 끌 수 없다.
+            // 범위 안 + 꺼져 있음 + 키 입력 → 켠다.
             if (_playerInRange && !IsActive && Input.GetKeyDown(interactKey))
                 Activate();
 
