@@ -474,3 +474,25 @@ Stage라는 부모를 만들고
 이렇게 하면 각 개체 간의 인스펙터 연결도 살릴 수 있다
 
 Stage 안에 담을 것 : SquadBlackboard, DimensionController, PathController(맵이 바뀔 수 있는 경우)
+
+숲 에셋
+고쳐야 할 것
+노멀맵이 일반 텍스처로 임포트되어 있습니다. NormalMap.png와 NormalMap (2).png의 Texture Type이 Default로 되어 있습니다. 이대로 머티리얼에 연결하면 표면 음영이 이상하게 나옵니다. 인스펙터에서 Texture Type → Normal map으로 바꾸고 Apply를 누르세요.
+텍스처가 모델에 연결되지 않았을 가능성이 높습니다. Sketchfab의 FBX는 텍스처 연결 정보가 빠져 있는 경우가 많습니다. 씬에 놓았을 때 회색이나 흰색으로 보이면 머티리얼을 직접 만들어 텍스처를 연결해야 합니다. 어느 텍스처가 어느 부분(나무, 땅, 길)용인지는 이름만으로 알 수 없으니 하나씩 넣어 보셔야 합니다.
+카메라와 조명 임포트가 켜져 있습니다 (importCameras, importLights). Sketchfab 모델에는 미리보기용 카메라와 조명이 함께 들어 있는 경우가 있습니다. 그러면 씬에 예상치 못한 카메라나 조명이 생겨 화면이나 밝기가 달라질 수 있습니다. 모델 임포트 설정에서 둘 다 끄는 것을 추천합니다.
+게임에 쓰려면 고려할 것
+충돌체(Collider)가 없습니다 (addColliders: 0). 이 게임에서는 특히 중요합니다.
+PathGrid는 Physics.CheckBox로 걸을 수 있는 곳을 판정합니다. 충돌체가 없으면 추격자가 나무를 통과하는 경로를 만듭니다.
+시야 감지의 HasLineOfSight는 레이캐스트를 씁니다. 충돌체가 없으면 나무 뒤에 숨어도 보입니다.
+모델 전체에 Mesh Collider를 켜는 방법(Generate Colliders)은 간단하지만, 39MB짜리 모델이면 무거울 수 있습니다. 나무 기둥마다 Capsule/Box Collider를 직접 배치하는 편이 가볍고, 판정도 의도대로 조절할 수 있습니다.
+용량과 성능: FBX만 39MB입니다. Unity에서 모델을 선택하면 인스펙터 아래 미리보기에 정점(verts)과 삼각형(tris) 수가 나옵니다. 삼각형이 수백만 개라면 쿼터뷰 게임에는 과할 수 있습니다.
+Git 용량: 이 커밋 하나로 저장소가 약 70MB 늘었습니다. GitHub는 파일 하나가 100MB를 넘으면 푸시를 거부하고, 50MB부터는 경고를 띄웁니다. 앞으로 큰 에셋을 더 넣으실 거면 Git LFS 설정을 추천합니다. 텍스처를 수정할 때마다 14MB씩 저장소에 쌓이기 때문입니다.
+라이선스: Sketchfab 모델은 대부분 CC BY(출처 표시 필수) 같은 라이선스가 붙어 있습니다. 졸업 작품이라면 모델 페이지에서 라이선스를 확인하고, 크레딧에 제작자를 적어 두세요.
+1~3번은 Unity 인스펙터에서 바로 고칠 수 있습니다. 숲 모델을 씬에 배치하실 때 4번(충돌체) 작업도 같이 도와드리겠습니다.
+
+참고: 바로 쓸 수 있는 소리
+SciFi Warehouse Kit 에셋에 쓸 만한 효과음이 들어 있습니다(Assets/TextureAssets/SciFi Warehouse Kit/Demo/Audio/SFX/).
+
+footstep.wav: Walking과 Running 발소리
+enginestart.wav: 발전기를 켤 때 한 번 나는 소리
+Fan_St.wav 또는 background_rumble.wav: 발전기 작동 중 반복되는 소리
