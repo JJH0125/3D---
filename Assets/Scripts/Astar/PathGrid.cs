@@ -32,6 +32,10 @@ namespace Astar3D
 
         [Tooltip("대각선 이동 허용 여부. True이면 8방향, False면 4방향")]
         [SerializeField] private bool allowDiagonal = true;
+        [Tooltip("Scene 화면에 격자 타일(흰색: 이동 가능, 빨간색: 장애물)을 그린다")]
+        [SerializeField] private bool drawGridGizmos = true;
+        [Tooltip("Scene 화면에 적의 경로(시안색)를 그린다")]
+        [SerializeField] private bool drawPathGizmos = true;
 
         private Node[,] _grid;
         private float _nodeDiameter;
@@ -212,19 +216,22 @@ namespace Astar3D
             if (_grid == null)
                 return;
 
-            foreach (Node n in _grid)
+            if (drawGridGizmos)
             {
-                /// Walkable 하면 흰색, 그렇지 않으면 빨간색
-                /// 4번째
-                Gizmos.color = n.Walkable ? new Color(1, 1, 1, 0.5f)    // 투명도 0.5
-                                          : new Color(1, 0, 0, 0.8f);   // 투명도 0.8
-                // 큐브의 한가운데 좌표와 큐브의 full size를 받아
-                // 바닥의 격자 무늬를 그림
-                Gizmos.DrawCube(n.WorldPosition,
-                new Vector3(_nodeDiameter * 0.9f, 0.05f, _nodeDiameter * 0.9f));
+                foreach (Node n in _grid)
+                {
+                    /// Walkable 하면 흰색, 그렇지 않으면 빨간색
+                    /// 4번째
+                    Gizmos.color = n.Walkable ? new Color(1, 1, 1, 0.5f)    // 투명도 0.5
+                                              : new Color(1, 0, 0, 0.8f);   // 투명도 0.8
+                    // 큐브의 한가운데 좌표와 큐브의 full size를 받아
+                    // 바닥의 격자 무늬를 그림
+                    Gizmos.DrawCube(n.WorldPosition,
+                    new Vector3(_nodeDiameter * 0.9f, 0.05f, _nodeDiameter * 0.9f));
+                }
             }
 
-            if (DebugPath != null)
+            if (drawPathGizmos && DebugPath != null)
             {
                 Gizmos.color = Color.cyan;
                 // 적이 오는 경로에 해당하는 노드들은

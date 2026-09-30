@@ -14,11 +14,11 @@ public class Follow : MonoBehaviour
     [Header("○ 튜닝 값 — 자유롭게 조절")]
     [Tooltip("내려다보는 각도(도). 클수록 위에서 수직으로 내려다본다")]
     [Range(10f, 90f)]
-    [SerializeField] private float pitch = 60f;
+    [SerializeField] private float pitch = 35.4f;
     [Tooltip("바라보는 방향(도). 45면 대각선 방향에서 비춘다")]
     [SerializeField] private float yaw = 45f;
     [Tooltip("플레이어와 카메라 사이의 거리(m)")]
-    [SerializeField] private float distance = 18f;
+    [SerializeField] private float distance = 26.73f;
 
     private Transform target;
 
