@@ -475,6 +475,7 @@ Stage라는 부모를 만들고
 
 Stage 안에 담을 것 : SquadBlackboard, DimensionController, PathController(맵이 바뀔 수 있는 경우)
 
+9/29
 숲 에셋
 고쳐야 할 것
 노멀맵이 일반 텍스처로 임포트되어 있습니다. NormalMap.png와 NormalMap (2).png의 Texture Type이 Default로 되어 있습니다. 이대로 머티리얼에 연결하면 표면 음영이 이상하게 나옵니다. 인스펙터에서 Texture Type → Normal map으로 바꾸고 Apply를 누르세요.
@@ -496,3 +497,123 @@ SciFi Warehouse Kit 에셋에 쓸 만한 효과음이 들어 있습니다(Assets
 footstep.wav: Walking과 Running 발소리
 enginestart.wav: 발전기를 켤 때 한 번 나는 소리
 Fan_St.wav 또는 background_rumble.wav: 발전기 작동 중 반복되는 소리
+
+9/30
+네임스페이스 정리
+정리하는 것을 추천합니다. 지금 당장 오류가 나는 것은 아니지만, 이름이 내용을 설명하지 못하는 상태입니다.
+
+현재 상태
+namespace	스크립트 수	내용
+Squad	33개	GOAP, 감지, 소리, UI, 음향, 발전기와 출구, 게임 매니저, 에디터 도구까지 거의 전부
+Astar3D	5개	길찾기
+없음	2개	Follow.cs, Player.cs
+Squad는 원래 "분대 AI(협력 추격자)"용으로 붙인 이름으로 보입니다. 지금은 PauseUI, MusicPlayer까지 전부 Squad 안에 있어서, 이름만 보면 분대와 상관없는 코드도 분대 AI의 일부처럼 보입니다.
+
+정리하면 좋은 이유
+졸업 작품의 핵심 주장과 연결됩니다. CLAUDE.md의 원칙 중 하나가 "GOAP 엔진(범용)과 게임 전용 코드의 분리"입니다. 지금은 Goap.cs가 PauseUI와 같은 namespace에 있어서 코드 구조만으로는 이 분리가 드러나지 않습니다. 엔진을 별도 namespace로 빼면 **"이 엔진은 게임을 모른다"**는 것이 using 목록으로 증명됩니다.
+의존 관계가 드러납니다. namespace를 나누면 다른 영역을 쓰는 파일마다 using이 붙습니다. 예를 들어 SoundEmitter(감지)가 SoundRingDisplay(디버깅)를 호출하는 것 같은 연결이 파일 맨 위에서 바로 보입니다.
+폴더 구조가 이미 나뉘어 있습니다. Goap/, Detection/, UI/, Objects/, Debugging/ 폴더가 있으니 폴더에 맞춰 namespace를 붙이면 됩니다. 새로 설계할 필요가 거의 없습니다.
+제안하는 구조
+프로젝트 이름을 뿌리로 두고 폴더에 맞춥니다. HorrorGame은 예시이니 원하시는 이름으로 바꾸시면 됩니다.
+
+
+HorrorGame.AI.Goap          Goap.cs (범용 엔진, 게임 이름을 모름)
+HorrorGame.AI.Chaser        HorrorChaserAgent, ChaserActions, ChaserGoals, ChaserLocomotion,
+                            ChaserContext, SquadBlackboard
+HorrorGame.AI.Squad         SquadAgent, Actions (다중 추격자 데모)
+HorrorGame.AI.Pathfinding   Node, NodeHeap, PathGrid, Pathfinder (지금의 Astar3D)
+HorrorGame.Detection        VisionCensor, Sound, SoundLibrary, SoundEmitter
+HorrorGame.Audio            MusicPlayer, SfxPlayer
+HorrorGame.Gameplay         GameManager, Generator, Exit, Portal, Decoy, Dimension*, Player*, Follow
+HorrorGame.UI               UI 폴더 전체
+HorrorGame.Debugging        AlertIcon, SoundRingDisplay
+HorrorGame.Editor           MapBuilder
+ChaserAgent.cs는 CLAUDE.md에서 "제거 예정"이라고 한 파일이라, 이번 기회에 지우는 것도 방법입니다.
+
+주의할 점: 버튼 연결 5개
+씬과 프리팹의 거의 모든 참조는 파일 ID(meta의 GUID)로 연결되어 있어서 namespace를 바꿔도 깨지지 않습니다. 하지만 버튼의 OnClick 연결은 클래스 이름을 문자열로 저장합니다. 확인해 보니 5개가 있습니다.
+
+
+Squad.TitleUI (2개), Squad.PauseUI, Squad.ResultUI, Squad.GameOverUI
+namespace를 바꾸면 이 연결이 "Missing"으로 보일 수 있습니다. 씬 파일에서 이 문자열도 함께 바꾸거나, 바꾼 뒤 Unity에서 버튼 5개의 OnClick을 확인하고 다시 연결해야 합니다.
+
+진행 방법
+작업 규모는 33개 파일의 namespace 줄과 using 추가, 씬 파일의 문자열 5개입니다. 한 번에 바꿀 수 있는 양입니다.
+
+작업 전: 지금 상태를 먼저 커밋하고 푸시합니다. 문제가 생기면 되돌리기 쉽습니다.
+작업 중: Unity 에디터를 닫아 둡니다. 씬 파일을 수정하는 동안 Unity가 씬을 덮어쓰지 않게 하기 위해서입니다.
+작업 후: Unity를 열어 컴파일 에러가 없는지, 버튼이 동작하는지 확인합니다.
+뿌리 이름(HorrorGame 또는 다른 이름)과 위 구조로 진행할지 정해 주시면 작업하겠습니다. 구조가 너무 잘게 나뉘었다고 느끼시면 AI, Gameplay, UI 정도로 더 크게 묶는 방법도 있습니다.
+
+
+c:\Users\ez\Documents\Assets\3D---\Assets\Scripts\SfxPlayer.cs
+음, 그냥 스크립트가 들어있는 폴더의 이름을 따서 namespace를 지어도 되려나?
+Bash Check root-level files and potential name clashes
+IN
+cd "C:/Users/ez/Documents/Assets/3D---/Assets/Scripts" && ls; grep -n "class \|: Editor\|EditorWindow" Editor/MapBuilder.cs | head -5; grep -n "^\s*public class" Player/*.cs
+
+OUT
+Astar
+Astar.meta
+Debugging
+Debugging.meta
+Detection
+Detection.meta
+DimensionController.cs
+DimensionController.cs.meta
+DimensionMember.cs
+DimensionMember.cs.meta
+Editor
+Editor.meta
+GameManager.cs
+GameManager.cs.meta
+Goap
+Goap.meta
+MusicPlayer.cs
+MusicPlayer.cs.meta
+Objects
+Objects.meta
+Player
+Player.meta
+SfxPlayer.cs
+SfxPlayer.cs.meta
+UI
+UI.meta
+24:    public static class MapBuilder
+Player/Follow.cs:12:public class Follow : MonoBehaviour
+Player/Player.cs:17:public class Player : MonoBehaviour
+Player/PlayerStep.cs:21:    public class PlayerStep : MonoBehaviour
+네, 괜찮습니다. 폴더 이름 = namespace는 C#에서 가장 흔한 규칙이고, Visual Studio나 Rider도 기본으로 이 규칙을 따르라고 권합니다. 폴더를 보면 namespace를 알 수 있어서 따로 외울 것이 없다는 장점이 큽니다.
+
+다만 지금 폴더 구조 그대로 적용하면 걸리는 곳이 네 군데 있습니다.
+
+그대로 적용하면 생기는 문제
+Scripts 폴더 바로 아래에 있는 파일 5개: GameManager, MusicPlayer, SfxPlayer, DimensionController, DimensionMember는 들어 있는 폴더가 Scripts라서 따를 이름이 없습니다. 폴더를 새로 만들어 옮기면 해결됩니다(예: Audio/, Core/).
+Player 폴더 안의 Player 클래스: namespace와 클래스 이름이 같으면 C#에서 자주 문제가 생깁니다. 다른 파일에서 Player라고 쓰면 컴파일러가 namespace를 말하는 것으로 해석해서, Player.Player처럼 써야 하는 상황이 생깁니다. 폴더 이름을 바꾸거나(예: Characters/) 이 폴더만 다른 namespace를 써야 합니다.
+Editor 폴더: Unity에는 UnityEditor.Editor라는 클래스가 있어서, Editor라는 namespace를 만들면 나중에 커스텀 인스펙터를 만들 때 이름이 충돌합니다. 게다가 Unity에서 Editor 폴더는 "빌드에서 제외"라는 특별한 의미가 있어서 폴더 이름을 바꿀 수도 없습니다. 이 폴더만 예외로 EditorTools 같은 namespace를 쓰는 것이 좋습니다.
+뿌리 이름이 없으면 일반적인 이름이 됩니다. UI, Objects, Debugging처럼 일반적인 이름을 맨 앞에 두면, 에셋이나 Unity 기능의 이름과 겹칠 여지가 생깁니다. 앞에 프로젝트 이름을 붙여 HorrorGame.UI처럼 쓰는 것이 일반적입니다. 이렇게 해도 규칙은 여전히 "폴더 이름"입니다.
+규칙을 적용한 결과 (예시)
+
+Scripts/                            → HorrorGame (뿌리)
+├─ Astar/                           → HorrorGame.Astar
+├─ Audio/        (새 폴더)          → HorrorGame.Audio        MusicPlayer, SfxPlayer
+├─ Core/         (새 폴더)          → HorrorGame.Core         GameManager, Dimension*
+├─ Characters/   (Player에서 이름 변경) → HorrorGame.Characters  Player, PlayerStep, Follow
+├─ Debugging/                       → HorrorGame.Debugging
+├─ Detection/                       → HorrorGame.Detection
+├─ Editor/                          → HorrorGame.EditorTools  (예외)
+├─ Goap/Basic/                      → HorrorGame.Goap.Basic
+├─ Goap/SingleChaser/               → HorrorGame.Goap.SingleChaser
+├─ Goap/MultipleChaser/             → HorrorGame.Goap.MultipleChaser
+├─ Objects/                         → HorrorGame.Objects
+└─ UI/                              → HorrorGame.UI
+고려할 점: Goap/Basic 폴더
+Goap/Basic에는 범용 엔진인 Goap.cs와 이 게임 전용인 SquadBlackboard, ChaserContext가 섞여 있습니다. 폴더 규칙만 따르면 엔진과 게임 전용 코드가 같은 namespace에 들어갑니다. "엔진과 게임 코드의 분리"를 구조로 보여 주고 싶으시면 Goap.cs만 Goap/Engine/ 같은 폴더로 옮기는 것을 추천합니다. 필수는 아닙니다.
+
+작업 방식
+폴더를 옮기거나 이름을 바꾸는 것은 Unity 에디터 안에서 하셔야 합니다. 탐색기에서 옮기면 meta 파일이 따라오지 않아 연결이 깨질 수 있습니다. 순서는 이렇게 하면 됩니다.
+
+Unity에서 할 일: 새 폴더(Audio, Core)를 만들어 파일을 옮기고, Player 폴더 이름을 바꿉니다.
+제가 할 일: Unity를 닫은 상태에서 모든 파일의 namespace와 using, 씬의 버튼 연결 문자열 5개를 고칩니다.
+뿌리 이름과 새 폴더 이름을 정해 주시면 1번이 끝난 뒤에 2번을 진행하겠습니다.
+

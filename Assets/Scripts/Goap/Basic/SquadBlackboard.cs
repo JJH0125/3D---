@@ -33,7 +33,7 @@ namespace Squad
         // 현재 경계 상태에 머문 시간
         private float TimeInAlertState;
 
-        // **** 플레이어에 대한 정보 ****
+        // **** 시야에 대한 정보 ****
 
         // 플레이어가 지금 보이는지 여부
         public bool PlayerCurrentlyVisible { get; private set; }
