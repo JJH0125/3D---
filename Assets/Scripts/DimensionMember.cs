@@ -10,8 +10,8 @@ namespace Squad
     public class DimensionMember : MonoBehaviour
     {
         [Header("■ 필수 연결 — 비워두면 에러")]
-        [Tooltip("적의 MeshRenderer")]
-        [SerializeField] private MeshRenderer meshRenderer;
+        [Tooltip("적의 Renderer. 뼈대가 있는 모델이면 자식의 SkinnedMeshRenderer를 넣는다")]
+        [SerializeField] private Renderer meshRenderer;
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("적이 속한 차원")]

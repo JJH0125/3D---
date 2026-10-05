@@ -41,7 +41,7 @@ namespace Squad
         [Tooltip("작동시키는 키")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
         [Tooltip("켤 때 한 번 나는 소리(딸깍). 적에게는 들리지 않는다")]
-        [SerializeField] private AudioClip activationSound;
+        [SerializeField] private AudioClip turningonSound;
         [Tooltip("작동 중 반복 재생할 소리. 비워두면 적에게만 들리고 플레이어에게는 들리지 않는다")]
         [SerializeField] private AudioClip activeSound;
         [Tooltip("작동음 볼륨")]
@@ -157,7 +157,7 @@ namespace Squad
 
             // 딸깍 소리는 플레이어에게만 들려야 하므로 Emit을 거치지 않고 SfxPlayer로 직접 재생한다.
             if (SfxPlayer.Instance != null)
-                SfxPlayer.Instance.PlayAt(activationSound, transform.position);
+                SfxPlayer.Instance.PlayAt(turningonSound, transform.position);
 
             GameManager.Instance.CheckExit();    // 발전기가 켜질 때마다 manager가 출구 활성화를 검사.
 
