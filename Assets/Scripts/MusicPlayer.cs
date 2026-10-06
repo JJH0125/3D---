@@ -91,6 +91,7 @@ namespace Squad
                     // 배경음 정지와 재개는 GameManager가 AudioListener.pause로 처리한다.
                     break;
 
+                case GameState.Caught:
                 case GameState.GameOver:
                 case GameState.Result:
                     SwitchTo(null);

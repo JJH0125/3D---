@@ -8,6 +8,7 @@ namespace Squad
         Title,
         Playing,
         Pause,
+        Caught,
         GameOver,
         Result
     }
@@ -26,6 +27,7 @@ namespace Squad
     /// 화면 규칙:
     ///   Playing        게임 화면만
     ///   Pause          게임 화면 위에 일시정지 화면을 겹침
+    ///   Caught         모든 화면을 끔 (적에게 잡힌 연출이 화면을 가득 채운다)
     ///   그 외          게임 화면을 끄고 해당 화면만
     /// </summary>
     public class GameManager : MonoBehaviour
@@ -145,10 +147,24 @@ namespace Squad
             ClearExitAndGenerators();
         }
 
-        /// <summary>적에게 잡히면 호출</summary>
-        public void GameOver()
+        /// <summary>
+        /// 적에게 잡힌 연출(Jumpscare)을 시작할 때 호출한다.
+        /// 연출이 끝나면 연출 쪽에서 GameOver를 불러 마무리한다.
+        /// 이미 잡혔거나 플레이 중이 아니면 false를 돌려주므로, 연출을 시작하면 안 된다.
+        /// </summary>
+        public bool BeginCaught()
         {
             if (CurrentState != GameState.Playing)
+                return false;
+
+            ChangeState(GameState.Caught);
+            return true;
+        }
+
+        /// <summary>적에게 잡히면(연출이 있다면 연출이 끝난 뒤) 호출</summary>
+        public void GameOver()
+        {
+            if (CurrentState != GameState.Playing && CurrentState != GameState.Caught)
                 return;
 
             ChangeState(GameState.GameOver);
@@ -182,6 +198,12 @@ namespace Squad
                 case GameState.Pause:
                     SetActiveSafe(pauseUI, true);
                     Time.timeScale = 0f;
+                    break;
+
+                // 연출이 재생되어야 하므로 시간은 멈추지 않는다.
+                case GameState.Caught:
+                    ShowOnly(null);
+                    Time.timeScale = 1f;
                     break;
 
                 case GameState.GameOver:

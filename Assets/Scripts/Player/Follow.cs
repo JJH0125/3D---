@@ -22,6 +22,16 @@ public class Follow : MonoBehaviour
 
     private Transform target;
 
+    // 클로즈업 중에는 플레이어를 따라가지 않는다.
+    private bool isCloseUp;
+    private Camera cam;
+    private float originalFieldOfView;
+
+    void Awake()
+    {
+        cam = GetComponent<Camera>();
+    }
+
     /// <summary>
     /// Update에서 바뀐 target의 position을
     /// LateUpdate에서 안전하게 참조하여
@@ -30,7 +40,7 @@ public class Follow : MonoBehaviour
     /// </summary>
     void LateUpdate()
     {
-        if (target == null)
+        if (target == null || isCloseUp)
             return;
 
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
@@ -40,4 +50,29 @@ public class Follow : MonoBehaviour
     }
 
     public void SetTarget(Transform player) => target = player;
+
+    /// <summary>
+    /// 쿼터뷰를 잠시 멈추고, 지정한 자리에서 지정한 방향을 비춘다.
+    /// 적에게 잡혔을 때 적의 얼굴을 화면 가득 보여주는 데 쓴다.
+    /// EndCloseUp을 부르면 시야각이 원래대로 돌아가고 다시 플레이어를 따라간다.
+    /// </summary>
+    public void BeginCloseUp(Vector3 position, Quaternion rotation, float fieldOfView)
+    {
+        // 클로즈업이 겹쳐 불려도 원래 시야각을 잃지 않도록 처음 한 번만 기억한다.
+        if (!isCloseUp)
+            originalFieldOfView = cam.fieldOfView;
+
+        isCloseUp = true;
+        cam.fieldOfView = fieldOfView;
+        transform.SetPositionAndRotation(position, rotation);
+    }
+
+    public void EndCloseUp()
+    {
+        if (!isCloseUp)
+            return;
+
+        isCloseUp = false;
+        cam.fieldOfView = originalFieldOfView;
+    }
 }

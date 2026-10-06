@@ -72,5 +72,21 @@ namespace Squad
                 ? Mathf.Clamp(_moveSpeed / walkAnimMoveSpeed, 0.5f, maxAnimSpeed)
                 : 1f;
         }
+
+        /// <summary>
+        /// 이동 애니메이션을 멈추고 지정한 상태(공격 등)를 처음부터 원래 빠르기로 재생한다.
+        /// 이후로는 이동 속도를 따라가지 않는다. 적에게 잡힌 연출에서 쓴다.
+        /// </summary>
+        public void PlayOnce(string stateName)
+        {
+            // Update가 재생 속도와 IsMove를 다시 덮어쓰지 않도록 끈다.
+            enabled = false;
+
+            if (animator == null)
+                return;
+
+            animator.speed = 1f;
+            animator.Play(stateName, 0, 0f);
+        }
     }
 }
