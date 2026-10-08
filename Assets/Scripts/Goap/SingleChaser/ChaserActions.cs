@@ -79,7 +79,8 @@ namespace Squad
             /// 다른 Plan을 재설계할 것이다.
             
             /// 도달했다 = 게임 오버
-            /// 잡힌 연출(Jumpscare)이 붙은 적이면 연출을 먼저 보여주고, 연출이 끝날 때 게임 오버가 된다.
+            /// 잡힌 연출(Jumpscare)이 붙은 적이면 연출을 먼저 보여주고
+            /// 연출이 끝날 때 게임 오버가 된다.
             if (arrived)
             {
                 Jumpscare jumpscare = ctx.Self.GetComponent<Jumpscare>();
