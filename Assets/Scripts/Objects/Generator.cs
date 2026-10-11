@@ -52,6 +52,21 @@ namespace Squad
         [Tooltip("이 거리(m)부터는 들리지 않는다")]
         [SerializeField] private float maxDistance = 40f;
 
+        [Header("○ 표시등 — 색으로 상태를 알려 주고, 어두운 맵에서 발전기를 찾을 단서가 된다")]
+        [Tooltip("꺼져 있을 때의 색")]
+        [SerializeField] private Color offLightColor = Color.red;
+        [Tooltip("작동 중일 때의 색")]
+        [SerializeField] private Color activeLightColor = Color.blue;
+        [Tooltip("표시등의 밝기. 0이면 표시등을 만들지 않는다")]
+        [FormerlySerializedAs("offLightIntensity")]
+        [SerializeField] private float lightIntensity = 3f;
+        [Tooltip("표시등의 빛이 닿는 거리(m)")]
+        [FormerlySerializedAs("offLightRange")]
+        [SerializeField] private float lightRange = 30f;
+        [Tooltip("발전기 위치를 기준으로 한 표시등의 높이(m)")]
+        [FormerlySerializedAs("offLightHeight")]
+        [SerializeField] private float lightHeight = 4f;
+
         // 작동 중인지 여부. 외부(플레이어 상호작용)에서 켜고 끌 수 있다.
         public bool IsActive { get; private set; }
         private float _emitTimer;
@@ -59,9 +74,13 @@ namespace Squad
         private bool _playerInRange;
         // 작동음을 반복 재생할 AudioSource. Awake에서 직접 만든다.
         private AudioSource _activeSource;
+        // 상태를 색으로 보여주는 표시등. Awake에서 직접 만든다.
+        private Light _statusLight;
 
         private void Awake()
         {
+            CreateStatusLight();
+
             // 기존 프리팹에도 따로 붙일 필요가 없도록 코드에서 만든다.
             _activeSource = gameObject.AddComponent<AudioSource>();
             _activeSource.playOnAwake = false;
@@ -77,6 +96,31 @@ namespace Squad
             IsActive = startsActive;
             GameManager.Instance.AddGenerator(this);
             UpdateActiveSound();
+            UpdateStatusLight();
+        }
+
+        // 작동음의 AudioSource처럼, 기존 프리팹에 따로 붙일 필요가 없도록 코드에서 만든다.
+        private void CreateStatusLight()
+        {
+            if (lightIntensity <= 0f)
+                return;
+
+            var lightObject = new GameObject("Status Light");
+            lightObject.transform.SetParent(transform);
+            // 발전기의 크기 배율이 축마다 달라서, 자식 기준 좌표가 아니라 월드 좌표로 높이를 준다.
+            lightObject.transform.position = transform.position + Vector3.up * lightHeight;
+
+            _statusLight = lightObject.AddComponent<Light>();
+            _statusLight.type = LightType.Point;
+            _statusLight.intensity = lightIntensity;
+            _statusLight.range = lightRange;
+        }
+
+        // 표시등의 색을 지금 상태에 맞춘다. (꺼짐: 빨강, 작동 중: 파랑)
+        private void UpdateStatusLight()
+        {
+            if (_statusLight != null)
+                _statusLight.color = IsActive ? activeLightColor : offLightColor;
         }
 
         private void Update()
@@ -154,6 +198,7 @@ namespace Squad
             
             _emitTimer = 0f;   // 켜자마자 첫 소리가 바로 나도록
             UpdateActiveSound();
+            UpdateStatusLight();
 
             // 딸깍 소리는 플레이어에게만 들려야 하므로 Emit을 거치지 않고 SfxPlayer로 직접 재생한다.
             if (SfxPlayer.Instance != null)
@@ -174,6 +219,7 @@ namespace Squad
         {
             IsActive = false;
             UpdateActiveSound();
+            UpdateStatusLight();
 
             // 꺼진 것도 화면의 발전기 수에 반영한다.
             GameManager.Instance.CheckExit();

@@ -37,8 +37,12 @@ namespace Squad
         [Tooltip("한 번의 Wander을 통해 이동하는 최대 거리")]
 
         [SerializeField] private float wanderRadius = 6f;
+        [Tooltip("지형(Terrain) 위에서 이 오브젝트의 위치가 땅보다 얼마나 위에 있을지(m). 모델의 발이 땅에 닿도록 맞춘다")]
+        [SerializeField] private float heightAboveGround = 1f;
 
         private Rigidbody _rigidbody;
+        // 씬에 지형(Terrain)이 있으면 그 높이를 따라 움직인다. 없으면 평평한 맵으로 보고 높이를 유지한다.
+        private Terrain _terrain;
         private List<Vector3> _path;
         private int _waypointIndex;
         private Vector3 _lastPathTarget;
@@ -50,7 +54,13 @@ namespace Squad
         {
             _rigidbody = GetComponent<Rigidbody>();
             _pathfinder = FindObjectOfType<Pathfinder>();
-        }    
+            _terrain = Terrain.activeTerrain;
+
+            // 프리팹에 저장된 높이는 평평한 맵 기준이므로, 시작할 때 서 있는 자리의 땅 높이로 맞춘다.
+            Vector3 start = transform.position;
+            start.y = HeightAt(start);
+            transform.position = start;
+        }
 
         /// <summary>
         /// 플레이어의 위치와 도착 판정을 측정하는 반경을 받아
@@ -169,9 +179,9 @@ namespace Squad
             Vector3 dir = (Flat(wp) - flatSelf).normalized; // 평면 상에서 방향 계산
             Vector3 step = dir * speed * Time.fixedDeltaTime;
             Vector3 next = _rigidbody.position + step;      // 실제 위치 + 이동
-            next.y = _rigidbody.position.y;                 // 물리 작용 등등을 거쳐 y 성분이 미세하게
-                                                            // 변할 수 있기 때문에 y를 고정하는 작업을
-                                                            // 거친다
+            // 길찾기는 위에서 내려다본 평면(xz)에서만 이뤄지므로, 높이(y)는 여기서 따로 정한다.
+            // 지형이 있으면 옮겨 갈 자리의 땅 높이에 맞추고, 없으면 지금 높이를 유지한다.
+            next.y = HeightAt(next);
             _rigidbody.MovePosition(next);
 
             // 유의미한 이동을 한다면
@@ -181,6 +191,19 @@ namespace Squad
                 _rigidbody.MoveRotation(Quaternion.Slerp(
                     _rigidbody.rotation, look, turnSpeed * Time.fixedDeltaTime));
             }
+        }
+
+        /// <summary>
+        /// position의 xz 자리에 섰을 때 이 오브젝트가 있어야 할 높이(y).
+        /// 지형이 없는 평평한 맵에서는 물리 작용으로 y가 미세하게 변하지 않도록 지금 높이를 그대로 돌려준다.
+        /// </summary>
+        private float HeightAt(Vector3 position)
+        {
+            if (_terrain == null)
+                return transform.position.y;
+
+            // SampleHeight는 지형 오브젝트의 위치를 뺀 높이를 주므로 다시 더한다.
+            return _terrain.SampleHeight(position) + _terrain.transform.position.y + heightAboveGround;
         }
 
         /// <summary>

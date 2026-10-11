@@ -32,6 +32,12 @@ namespace Squad
         [Tooltip("Detection을 수행할 주기")]
         [SerializeField] private float detectInterval = 0.4f;
 
+        [Header("○ 불빛 — 불(모닥불, 횃불) 근처의 플레이어는 더 멀리서도 보인다")]
+        [Tooltip("첫 라운드에서, 불빛 안의 플레이어를 볼 수 있는 거리의 배율. 1이면 평소와 같다")]
+        [SerializeField] private float litViewMultiplierFirstRound = 1f;
+        [Tooltip("마지막 라운드에서의 배율. 라운드가 오를수록 첫 라운드 값에서 이 값으로 고르게 커진다")]
+        [SerializeField] private float litViewMultiplierLastRound = 2.5f;
+
         private float _detectTimer;
         private DimensionController dimensionController;
         private DimensionMember enemy;
@@ -76,7 +82,26 @@ namespace Squad
             Vector3 flatTarget = target.position;
             flatSelf.y = flatTarget.y = 0f;
 
-            return Vector3.Distance(flatSelf, flatTarget) <= viewDistance;
+            return Vector3.Distance(flatSelf, flatTarget) <= ViewDistanceFor(target);
+        }
+
+        /// <summary>
+        /// target을 볼 수 있는 거리. 평소에는 viewDistance이고, target이 불빛 안에 있으면 더 멀어진다.
+        /// 얼마나 멀어지는지는 라운드에 따라 정해진다. 라운드가 오를수록 적의 눈이 밝아져서,
+        /// 초반에는 안전하던 불 옆이 후반에는 위험해진다.
+        /// </summary>
+        private float ViewDistanceFor(Transform target)
+        {
+            if (!FireSource.IsLit(target.position))
+                return viewDistance;
+
+            // 첫 라운드를 0, 마지막 라운드를 1로 본 진행도
+            float progress = 0f;
+            GameManager manager = GameManager.Instance;
+            if (manager != null && manager.TotalRounds > 1)
+                progress = (manager.CurrentRound - 1f) / (manager.TotalRounds - 1f);
+
+            return viewDistance * Mathf.Lerp(litViewMultiplierFirstRound, litViewMultiplierLastRound, progress);
         }
 
         // 3. 플레이어가 적의 시야각 안에 있는가?

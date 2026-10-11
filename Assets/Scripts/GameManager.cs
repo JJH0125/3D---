@@ -60,6 +60,8 @@ namespace Squad
 
         /// 현재 라운드 (1부터 시작)
         public int CurrentRound { get; private set; } = 1;
+        /// 전체 라운드 수
+        public int TotalRounds => totalRounds;
 
         /// 켜진 발전기의 수
         public int ActivatedGenerators { get; private set; }
@@ -70,6 +72,8 @@ namespace Squad
 
         /// 출구
         private Exit _exit;
+        /// 지금 라운드의 출구. 아직 등록되지 않았거나 라운드가 끝났으면 null. (출구 방향 표시가 읽어 간다)
+        public Exit CurrentExit => _exit;
 
         private void Awake()
         {

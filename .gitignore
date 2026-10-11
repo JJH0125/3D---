@@ -61,3 +61,15 @@
 /UnityEngine.UI.csproj
 /UnityEngine.UI.Tests.csproj
 /UserSettings
+
+# 에셋 스토어에서 받은 에셋 (저장소에 올리지 않는다. 다시 받을 때는 Description.md 참고)
+/Assets/Devtricked/
+/Assets/Devtricked.meta
+/Assets/ObjectiveEnvironment_Assets/
+/Assets/ObjectiveEnvironment_Assets.meta
+/Assets/UnityTechnologies/
+/Assets/UnityTechnologies.meta
+
+# Unity가 자동으로 만드는 프로젝트 파일
+*.csproj
+*.sln

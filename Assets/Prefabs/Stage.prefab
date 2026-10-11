@@ -523,6 +523,7 @@ GameObject:
   - component: {fileID: 8451474501489815}
   - component: {fileID: 8451474501489812}
   - component: {fileID: 2070682298061360333}
+  - component: {fileID: 453511259166017928}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -1012,6 +1013,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8451474785544358}
+  - component: {fileID: 4389814931767075013}
   m_Layer: 0
   m_Name: Stage
   m_TagString: Untagged
@@ -3353,3 +3355,46 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &4389814931767075013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8451474785544359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a2176631bd2458db4fb9e475ca6b786, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hillRadius: 40
+  prefabGroundHeight: 0.89
+  exitPosition: {x: 0, y: -84}
+  playerDistanceFromExit: 25
+  edgeMargin: 10
+  maxSlope: 25
+  generatorSpreadAngle: 80
+  generatorMinRadius: 30
+  generatorSpacing: 35
+  portalMinPlayerDistance: 30
+  objectSpacing: 10
+  campfirePrefab: {fileID: 284553296687310541, guid: 1d52a0c631cb4289a9d1023920cf3242, type: 3}
+  campfireCount: 6
+  campfireSpacing: 40
+--- !u!114 &453511259166017928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8451474501489822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 149548d1a05330442b4420d662dee097, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  torchPrefab: {fileID: 450134387833632418, guid: 14ddb99febe946d58b5247352646bda3, type: 3}
+  holdPosition: {x: 0.65, y: 0.2, z: 0.35}
+  holdRotation: {x: 10, y: 0, z: -25}
+  throwSpeed: 24
+  throwUpSpeed: 9
