@@ -24,8 +24,9 @@ namespace Squad
     ///   - 길찾기 격자에서 걸을 수 있는 칸이다 (나무 기둥 안이 아니다)
     ///   - 먼저 놓인 오브젝트와 너무 가깝지 않다
     ///
-    /// 높이는 프리팹에서 바닥 위로 띄워 둔 만큼을 그대로 지켜서 지형 위에 올린다.
-    /// 그래서 프리팹에서 맞춰 둔 "발전기가 바닥에 닿는 높이" 같은 것이 깨지지 않는다.
+    /// 높이는 프리팹에 놓인 높이를 읽지 않고, 종류마다 정해 둔 값(○ 높이)만큼 그 자리의 땅 위에 올린다.
+    /// 그래서 프리팹 안에서는 오브젝트를 어느 위치, 어느 높이에 두든 결과가 같다.
+    /// (모델의 크기를 바꿔서 땅에 묻히거나 뜨면 프리팹의 높이가 아니라 ○ 높이의 값을 고친다)
     ///
     /// 발전기, 포탈, 적의 개수는 정하지 않는다. Stage 프리팹에 들어 있는 것을 모두 찾아서 옮긴다.
     /// 모닥불만은 프리팹 하나를 받아 정해진 개수만큼 여기서 만든다. (여러 개를 프리팹에 일일이 넣지 않도록)
@@ -44,8 +45,16 @@ namespace Squad
         [Header("○ 지형 — Forest Map Tool에 넣은 값과 같게")]
         [Tooltip("봉우리의 반경(m). 적은 플레이어에게서 이 값의 2배(지름) 이상 떨어져 생성된다")]
         [SerializeField] private float hillRadius = 40f;
-        [Tooltip("프리팹에서 바닥으로 삼았던 높이. 각 오브젝트가 이 높이보다 위에 있는 만큼 지형 위로 띄운다")]
-        [SerializeField] private float prefabGroundHeight = 0.89f;
+
+        [Header("○ 높이 — 오브젝트의 기준점(pivot)이 땅보다 얼마나 위에 있을지(m)")]
+        [Tooltip("출구")]
+        [SerializeField] private float exitHeight = 13.63f;
+        [Tooltip("플레이어. 발이 땅에 닿는 높이보다 크면 그만큼 공중에서 떨어지며 시작한다")]
+        [SerializeField] private float playerHeight = 9.11f;
+        [Tooltip("발전기")]
+        [SerializeField] private float generatorHeight = 4.11f;
+        [Tooltip("포탈")]
+        [SerializeField] private float portalHeight = 4f;
 
         [Header("○ 고정 배치")]
         [Tooltip("출구의 자리. 지형 한가운데를 (0, 0)으로 본 (x, z)")]
@@ -137,7 +146,7 @@ namespace Squad
 
             Exit exit = GetComponentInChildren<Exit>();
             if (exit != null)
-                Place(exit.transform, exitSpot);
+                PlaceOnGround(exit.transform, exitSpot, exitHeight);
 
             Player player = GetComponentInChildren<Player>();
             if (player != null)
@@ -147,7 +156,7 @@ namespace Squad
                 if (controller != null)
                     controller.enabled = false;
 
-                Place(player.transform, playerSpot);
+                PlaceOnGround(player.transform, playerSpot, playerHeight);
 
                 if (controller != null)
                     controller.enabled = true;
@@ -182,14 +191,14 @@ namespace Squad
                     found = IsUsable(spot) && IsFarFromPlaced(spot, generatorSpacing);
                 }
 
-                PlaceRandom(generator.transform, spot, found);
+                PlaceRandom(generator.transform, spot, found, generatorHeight);
             }
         }
 
         private void PlacePortals(Vector3 playerSpot)
         {
             foreach (Portal portal in GetComponentsInChildren<Portal>())
-                PlaceAwayFromPlayer(portal.transform, playerSpot, portalMinPlayerDistance);
+                PlaceAwayFromPlayer(portal.transform, playerSpot, portalMinPlayerDistance, portalHeight);
         }
 
         private void PlaceEnemies(Vector3 playerSpot)
@@ -197,8 +206,10 @@ namespace Squad
             // 규칙: 적은 플레이어에게서 적어도 봉우리의 지름만큼 떨어진 곳에서 시작한다.
             float minDistance = hillRadius * 2f;
 
+            // 적의 높이는 여기서 정하지 않는다. 이 뒤에 실행되는 ChaserLocomotion의 Awake가
+            // 자기 설정값(heightAboveGround)으로 땅 위에 올라서므로, 여기서는 땅에 놓기만 한다.
             foreach (HorrorChaserAgent enemy in GetComponentsInChildren<HorrorChaserAgent>())
-                PlaceAwayFromPlayer(enemy.transform, playerSpot, minDistance);
+                PlaceAwayFromPlayer(enemy.transform, playerSpot, minDistance, 0f);
         }
 
         // 모닥불을 개수만큼 만들어, 지형 전체에 서로 떨어뜨려 놓는다.
@@ -237,7 +248,8 @@ namespace Squad
         }
 
         // 지형 전체에서 고르게 뽑되, 플레이어에게서 minPlayerDistance 이상 떨어진 자리에 놓는다.
-        private void PlaceAwayFromPlayer(Transform target, Vector3 playerSpot, float minPlayerDistance)
+        private void PlaceAwayFromPlayer(
+            Transform target, Vector3 playerSpot, float minPlayerDistance, float heightAboveGround)
         {
             Vector3 spot = _center;
             bool found = false;
@@ -252,18 +264,18 @@ namespace Squad
                         && IsFarFromPlaced(spot, objectSpacing);
             }
 
-            PlaceRandom(target, spot, found);
+            PlaceRandom(target, spot, found, heightAboveGround);
         }
 
         // 무작위로 뽑은 자리에 놓는다. 끝내 조건에 맞는 자리를 못 찾았으면 마지막 후보에 놓고 알린다.
-        private void PlaceRandom(Transform target, Vector3 spot, bool found)
+        private void PlaceRandom(Transform target, Vector3 spot, bool found, float heightAboveGround)
         {
             if (!found)
                 Debug.LogWarning(
                     $"[StageLayout] {target.name}: 조건에 맞는 자리를 찾지 못해 마지막 후보에 놓았습니다. " +
                     "거리 조건이 지형 크기에 비해 너무 크지 않은지 확인하세요.", target);
 
-            Place(target, spot);
+            PlaceOnGround(target, spot, heightAboveGround);
         }
 
         // ── 자리 검사 ────────────────────────────────────────────────
@@ -298,10 +310,6 @@ namespace Squad
             => Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
 
         // ── 놓기 ─────────────────────────────────────────────────────
-
-        // target을 spot의 xz 자리로 옮기고, 프리팹에서 바닥 위로 띄워 둔 만큼 지형 위에 올린다.
-        private void Place(Transform target, Vector3 spot)
-            => PlaceOnGround(target, spot, target.localPosition.y - prefabGroundHeight);
 
         // target을 spot의 xz 자리로 옮기고, 그 자리의 땅에서 heightAboveGround만큼 위에 올린다.
         private void PlaceOnGround(Transform target, Vector3 spot, float heightAboveGround)
