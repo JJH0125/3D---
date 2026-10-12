@@ -167,12 +167,12 @@ namespace Squad
 
             if (canSee)
                 // 플레이어가 시야에 있으면, 매번 호출하여 그 위치를 업데이트
-                SquadBlackboard.Instance.ReportSighting(target.position);
+                SquadBlackboard.Instance.ReportSighting(enemy, target.position);
             else
 
                 if (visibleJustBefore)
                     // 플레이어가 시야에서 사라지면, 단 한번만 호출하여 위치 제거
-                    SquadBlackboard.Instance.ReportLostSight();
+                    SquadBlackboard.Instance.ReportLostSight(enemy);
 
             // 이번 실행의 결과를 기억
             visibleJustBefore = canSee;

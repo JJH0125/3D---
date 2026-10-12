@@ -35,8 +35,11 @@ namespace Squad
 
         // **** 시야에 대한 정보 ****
 
+        // 현재 플레이어를 보고 있는 적들
+        private readonly HashSet<DimensionMember> _seeingEnemies = new();
+
         // 플레이어가 지금 보이는지 여부
-        public bool PlayerCurrentlyVisible { get; private set; }
+        public bool PlayerCurrentlyVisible => _seeingEnemies.Count > 0;
         // 플레이어가 마지막까지 있었던 위치
         public Vector3 LastPlayerPosition { get; private set; }
         /// 플레이어가 마지막으로 보인 뒤 지난 시간
@@ -112,11 +115,13 @@ namespace Squad
 
         /// 플레이어가 시야에 들어왔을 때
         /// 플레이어의 정보가 업데이트되고, 경계 상태는 무조건 Alerted로 격상된다
-        public void ReportSighting(Vector3 playerPosition)
+        public void ReportSighting(DimensionMember enemy, Vector3 playerPosition)
         {
+            // 이 적이 플레이어를 보기 시작했다
+            _seeingEnemies.Add(enemy);
+
             TimeSinceLastSeen = 0f;
             LastPlayerPosition = playerPosition;
-            PlayerCurrentlyVisible = true;
             SetAlert(AlertLevel.Alerted);
         }
 
@@ -124,7 +129,11 @@ namespace Squad
         /// Visible 정보를 false로 설정한다.
         /// LastPlayerPosition은 지우지 않고 남겨두어
         /// 시야에서 사라져도 잠시동안은 그 주변을 수색하도록 한다.
-        public void ReportLostSight() => PlayerCurrentlyVisible = false;
+        public void ReportLostSight(DimensionMember enemy)
+        {
+            // 이 적이 플레이어를 더 이상 보지 않는다
+            _seeingEnemies.Remove(enemy);
+        }
 
         /// <summary>
         /// Report a heard sound (footstep, generator, etc.) — softer than a
