@@ -22,7 +22,7 @@ namespace Squad
         [Tooltip("Calm 상태일 때 이동 속도")]
         [SerializeField] private float calmMoveSpeed = 5f;
         [Tooltip("Suspicious 상태일 때 이동 속도")]
-        [SerializeField] private float suspiciousMoveSpeed = 8f;
+        [SerializeField] private float suspiciousMoveSpeed = 9f;
         [Tooltip("Alerted 상태일 때 이동 속도")]
         [SerializeField] private float alertedMoveSpeed = 13f;
         [Tooltip("적이 고개를 돌리는 속도")]
@@ -33,16 +33,20 @@ namespace Squad
         [SerializeField] private float waypointTolerance = 0.25f;
         [Tooltip("플레이어가 유의미하게 움직였다 의 기준")]
 
-        [SerializeField] private float repathThreshold = 1.0f;
+        [SerializeField] private float repathThreshold = 3f;
         [Tooltip("한 번의 Wander을 통해 이동하는 최대 거리")]
 
-        [SerializeField] private float wanderRadius = 6f;
+        [SerializeField] private float wanderRadius = 30f;
         [Tooltip("지형(Terrain) 위에서 이 오브젝트의 위치가 땅보다 얼마나 위에 있을지(m). 모델의 발이 땅에 닿도록 맞춘다")]
         [SerializeField] private float heightAboveGround = 1f;
+        [Tooltip("몸이 땅을 딛는 범위의 반경(m). 비탈에서 이 범위 안의 가장 높은 땅에 맞춰 서므로 발이 땅에 묻히지 않는다. 0이면 한가운데의 높이만 본다")]
+        [SerializeField] private float footprintRadius = 2.5f;
 
         private Rigidbody _rigidbody;
         // 씬에 지형(Terrain)이 있으면 그 높이를 따라 움직인다. 없으면 평평한 맵으로 보고 높이를 유지한다.
         private Terrain _terrain;
+        // 발이 닿는 범위의 둘레에서 땅 높이를 잴 지점의 수
+        private const int FootprintSamples = 8;
         private List<Vector3> _path;
         private int _waypointIndex;
         private Vector3 _lastPathTarget;
@@ -55,6 +59,12 @@ namespace Squad
             _rigidbody = GetComponent<Rigidbody>();
             _pathfinder = FindObjectOfType<Pathfinder>();
             _terrain = Terrain.activeTerrain;
+
+            // 평평한 맵에서는 높이가 흔들리지 않도록 Rigidbody의 Y 위치를 고정해 두었다.
+            // 지형 위에서는 땅을 따라 오르내려야 하므로 그 고정을 푼다.
+            // (고정된 채로는 처음 선 높이에 머물러서, 봉우리를 오를 때 땅속으로 들어간다)
+            if (_terrain != null)
+                _rigidbody.constraints &= ~RigidbodyConstraints.FreezePositionY;
 
             // 프리팹에 저장된 높이는 평평한 맵 기준이므로, 시작할 때 서 있는 자리의 땅 높이로 맞춘다.
             Vector3 start = transform.position;
@@ -202,8 +212,22 @@ namespace Squad
             if (_terrain == null)
                 return transform.position.y;
 
+            // 몸집이 큰 적은 한가운데의 높이에만 맞추면, 비탈에서 오르막 쪽 발이 땅속에 묻힌다.
+            // 그래서 발이 닿는 범위의 둘레도 함께 재서, 그중 가장 높은 땅에 맞춘다.
+            // (내리막 쪽 발은 조금 뜨지만, 묻히는 것보다 눈에 덜 띈다)
+            float ground = _terrain.SampleHeight(position);
+            if (footprintRadius > 0f)
+            {
+                for (int i = 0; i < FootprintSamples; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / FootprintSamples;
+                    Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * footprintRadius;
+                    ground = Mathf.Max(ground, _terrain.SampleHeight(position + offset));
+                }
+            }
+
             // SampleHeight는 지형 오브젝트의 위치를 뺀 높이를 주므로 다시 더한다.
-            return _terrain.SampleHeight(position) + _terrain.transform.position.y + heightAboveGround;
+            return ground + _terrain.transform.position.y + heightAboveGround;
         }
 
         /// <summary>

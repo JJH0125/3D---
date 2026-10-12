@@ -13,7 +13,6 @@ namespace Squad
     ///
     /// 무작위 배치 (라운드마다 달라진다):
     ///   발전기  대체로 봉우리 너머, 플레이어의 반대쪽에 서로 떨어뜨려 흩뿌린다
-    ///   포탈    플레이어에게서 어느 정도 떨어진 아무 곳
     ///   적      플레이어에게서 적어도 봉우리의 지름만큼 떨어진 곳
     ///   모닥불  맵 곳곳에, 서로 떨어뜨려 놓는다 (길잡이 역할)
     ///
@@ -28,8 +27,12 @@ namespace Squad
     /// 그래서 프리팹 안에서는 오브젝트를 어느 위치, 어느 높이에 두든 결과가 같다.
     /// (모델의 크기를 바꿔서 땅에 묻히거나 뜨면 프리팹의 높이가 아니라 ○ 높이의 값을 고친다)
     ///
-    /// 발전기, 포탈, 적의 개수는 정하지 않는다. Stage 프리팹에 들어 있는 것을 모두 찾아서 옮긴다.
-    /// 모닥불만은 프리팹 하나를 받아 정해진 개수만큼 여기서 만든다. (여러 개를 프리팹에 일일이 넣지 않도록)
+    /// 적의 개수는 정하지 않는다. Stage 프리팹에 들어 있는 것을 모두 찾아서 옮긴다.
+    /// 발전기와 모닥불은 개수를 숫자로 정한다. (여러 개를 프리팹에 일일이 넣지 않도록)
+    /// Stage 프리팹에 하나씩만 넣어 두면, 그것을 견본으로 삼아 모자란 만큼 복제한다.
+    ///
+    /// 모닥불 주변의 나무와 풀은 라운드가 시작될 때 치워서, 모닥불이 숲에 가려지지 않게 한다.
+    /// 숲은 Stage가 아니라 씬에 있으므로 지우지 않고 꺼 두었다가, 다음 라운드가 시작될 때 되돌린다.
     /// 씬에 지형(Terrain)이 없으면 아무것도 하지 않으므로, 프리팹의 배치가 그대로 쓰인다.
     ///
     /// 다른 스크립트의 Awake보다 먼저 실행된다.
@@ -49,12 +52,10 @@ namespace Squad
         [Header("○ 높이 — 오브젝트의 기준점(pivot)이 땅보다 얼마나 위에 있을지(m)")]
         [Tooltip("출구")]
         [SerializeField] private float exitHeight = 13.63f;
-        [Tooltip("플레이어. 발이 땅에 닿는 높이보다 크면 그만큼 공중에서 떨어지며 시작한다")]
-        [SerializeField] private float playerHeight = 9.11f;
+        [Tooltip("플레이어. 기준점이 몸 한가운데(발에서 1m 위)이므로 1보다 조금 크게 둔다. 값이 크면 그만큼 공중에서 떨어지며 시작한다")]
+        [SerializeField] private float playerHeight = 1.2f;
         [Tooltip("발전기")]
         [SerializeField] private float generatorHeight = 4.11f;
-        [Tooltip("포탈")]
-        [SerializeField] private float portalHeight = 4f;
 
         [Header("○ 고정 배치")]
         [Tooltip("출구의 자리. 지형 한가운데를 (0, 0)으로 본 (x, z)")]
@@ -67,6 +68,8 @@ namespace Squad
         [SerializeField] private float edgeMargin = 10f;
         [Tooltip("땅의 기울기가 이 각도(도)보다 가파른 곳에는 놓지 않는다")]
         [SerializeField] private float maxSlope = 25f;
+        [Tooltip("라운드마다 놓을 발전기의 개수. Stage 프리팹에는 발전기를 하나만 넣어 두면 되고, 모자란 만큼 복제한다")]
+        [SerializeField] private int generatorCount = 3;
         [Tooltip("발전기를 뿌릴 부채꼴의 절반 각도(도). 플레이어의 정반대 방향을 기준으로 좌우로 이만큼 벌어진다")]
         [Range(10f, 180f)]
         [SerializeField] private float generatorSpreadAngle = 80f;
@@ -74,21 +77,25 @@ namespace Squad
         [SerializeField] private float generatorMinRadius = 30f;
         [Tooltip("발전기끼리 적어도 이만큼(m)은 떨어지게 한다")]
         [SerializeField] private float generatorSpacing = 35f;
-        [Tooltip("포탈이 플레이어에게서 적어도 이만큼(m)은 떨어지게 한다")]
-        [SerializeField] private float portalMinPlayerDistance = 30f;
-        [Tooltip("포탈, 적, 모닥불이 먼저 놓인 오브젝트에서 적어도 이만큼(m)은 떨어지게 한다")]
+        [Tooltip("적과 모닥불이 먼저 놓인 오브젝트에서 적어도 이만큼(m)은 떨어지게 한다")]
         [SerializeField] private float objectSpacing = 10f;
 
         [Header("○ 모닥불")]
-        [Tooltip("모닥불 프리팹. 비워두면 모닥불을 만들지 않는다")]
-        [SerializeField] private GameObject campfirePrefab;
-        [Tooltip("라운드마다 만들 모닥불의 개수")]
+        [Tooltip("라운드마다 놓을 모닥불의 개수. Stage 프리팹에는 모닥불을 하나만 넣어 두면 되고, 모자란 만큼 복제한다")]
         [SerializeField] private int campfireCount = 6;
         [Tooltip("모닥불끼리 적어도 이만큼(m)은 떨어지게 한다")]
         [SerializeField] private float campfireSpacing = 40f;
+        [Tooltip("모닥불에서 이 거리(m) 안에 있는 나무와 풀을 치워서 모닥불이 잘 보이게 한다. 0이면 치우지 않는다")]
+        [SerializeField] private float campfireClearRadius = 12f;
 
         // 조건에 맞는 자리가 나올 때까지 다시 뽑는 최대 횟수
         private const int MaxTries = 300;
+        // Forest Map Tool이 나무와 풀을 심어 두는 씬 오브젝트의 이름
+        private const string ForestPropsName = "Forest Props";
+
+        // 지난 라운드에 모닥불 주변에서 치워 둔 나무와 풀.
+        // Stage는 라운드마다 새로 만들어지지만 숲은 씬에 그대로 남으므로, 라운드를 넘어 기억해야 한다.
+        private static readonly List<GameObject> _clearedProps = new();
 
         private Terrain _terrain;
         private Pathfinder _pathfinder;
@@ -101,6 +108,8 @@ namespace Squad
 
         private void Awake()
         {
+            RestoreClearedProps();
+
             _terrain = Terrain.activeTerrain;
             if (_terrain == null)
                 return;
@@ -113,7 +122,6 @@ namespace Squad
 
             Vector3 playerSpot = PlaceExitAndPlayer();
             PlaceGenerators(playerSpot);
-            PlacePortals(playerSpot);
             PlaceEnemies(playerSpot);
             // 모닥불은 자리가 조금 달라져도 상관없으므로, 중요한 것들을 먼저 놓은 뒤 남은 자리에 놓는다.
             PlaceCampfires();
@@ -173,7 +181,7 @@ namespace Squad
             Vector3 away = _center - playerSpot;
             float awayAngle = Mathf.Atan2(away.z, away.x) * Mathf.Rad2Deg;
 
-            foreach (Generator generator in GetComponentsInChildren<Generator>())
+            foreach (Generator generator in GetCopies<Generator>(generatorCount))
             {
                 Vector3 spot = _center;
                 bool found = false;
@@ -195,10 +203,28 @@ namespace Squad
             }
         }
 
-        private void PlacePortals(Vector3 playerSpot)
+        /// <summary>
+        /// Stage에 들어 있는 T(발전기, 모닥불)를 count개가 되도록 맞춰서 돌려준다.
+        /// 정해진 개수보다 적으면, 첫 번째 것을 견본으로 삼아 모자란 만큼 복제한다.
+        /// (견본이 하나도 없으면 만들 수 없고, 이미 개수보다 많으면 지우지 않고 그대로 쓴다)
+        ///
+        /// 복제본은 견본의 설정을 그대로 물려받으므로, 값을 바꿀 때는 견본 하나만 고치면 된다.
+        /// </summary>
+        private List<T> GetCopies<T>(int count) where T : Component
         {
-            foreach (Portal portal in GetComponentsInChildren<Portal>())
-                PlaceAwayFromPlayer(portal.transform, playerSpot, portalMinPlayerDistance, portalHeight);
+            var copies = new List<T>(GetComponentsInChildren<T>());
+            if (copies.Count == 0)
+                return copies;
+
+            T sample = copies[0];
+            while (copies.Count < count)
+            {
+                T copy = Instantiate(sample, sample.transform.parent);
+                copy.name = sample.name;
+                copies.Add(copy);
+            }
+
+            return copies;
         }
 
         private void PlaceEnemies(Vector3 playerSpot)
@@ -212,15 +238,12 @@ namespace Squad
                 PlaceAwayFromPlayer(enemy.transform, playerSpot, minDistance, 0f);
         }
 
-        // 모닥불을 개수만큼 만들어, 지형 전체에 서로 떨어뜨려 놓는다.
+        // 모닥불을 지형 전체에 서로 떨어뜨려 놓고, 그 주변의 나무와 풀을 치운다.
         private void PlaceCampfires()
         {
-            if (campfirePrefab == null)
-                return;
-
             var campfireSpots = new List<Vector3>();
 
-            for (int n = 0; n < campfireCount; n++)
+            foreach (Campfire campfire in GetCopies<Campfire>(campfireCount))
             {
                 Vector3 spot = _center;
                 bool found = false;
@@ -236,15 +259,59 @@ namespace Squad
                             found = false;
                 }
 
-                // 자리가 없으면 억지로 놓지 않고 이번 것은 건너뛴다. 모닥불은 하나쯤 적어도 게임이 진행된다.
+                // 자리가 없으면 억지로 놓지 않고 이번 것은 꺼 둔다. 모닥불은 하나쯤 적어도 게임이 진행된다.
                 if (!found)
+                {
+                    campfire.gameObject.SetActive(false);
                     continue;
+                }
 
                 campfireSpots.Add(spot);
-                // 모닥불 프리팹은 땅에 닿는 높이를 기준으로 만들어져 있으므로 띄우지 않고 그대로 땅에 놓는다.
-                GameObject campfire = Instantiate(campfirePrefab, transform);
+                // 모닥불은 기준점이 땅에 닿는 지점이 되도록 만들어져 있으므로 띄우지 않고 그대로 땅에 놓는다.
                 PlaceOnGround(campfire.transform, spot, 0f);
             }
+
+            ClearPropsAround(campfireSpots);
+        }
+
+        // spots 주변의 나무와 풀을 꺼서 치운다. 꺼 둔 것은 기억해 두었다가 다음 라운드에 되돌린다.
+        // 길찾기 격자는 씬이 시작될 때 숲 전체를 기준으로 구워 둔 그대로 쓴다.
+        // (치운 나무 자리의 칸은 계속 막힌 칸으로 남지만, 추격자가 그 한두 칸을 돌아갈 뿐이다)
+        private void ClearPropsAround(List<Vector3> spots)
+        {
+            if (campfireClearRadius <= 0f)
+                return;
+
+            GameObject props = GameObject.Find(ForestPropsName);
+            if (props == null)
+                return;
+
+            // 숲은 "Forest Props > Trees / Plants > 나무와 풀 하나하나"로 되어 있다.
+            foreach (Transform group in props.transform)
+            {
+                foreach (Transform prop in group)
+                {
+                    foreach (Vector3 spot in spots)
+                    {
+                        if (FlatDistance(prop.position, spot) >= campfireClearRadius)
+                            continue;
+
+                        prop.gameObject.SetActive(false);
+                        _clearedProps.Add(prop.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 지난 라운드에 치워 둔 나무와 풀을 다시 켠다.
+        private static void RestoreClearedProps()
+        {
+            foreach (GameObject prop in _clearedProps)
+                if (prop != null)
+                    prop.SetActive(true);
+
+            _clearedProps.Clear();
         }
 
         // 지형 전체에서 고르게 뽑되, 플레이어에게서 minPlayerDistance 이상 떨어진 자리에 놓는다.

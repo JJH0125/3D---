@@ -18,7 +18,7 @@ namespace Squad
 
         [Header("○ 튜닝 값 — 자유롭게 조절")]
         [Tooltip("적이 볼 수 있는 최대 거리")]
-        [SerializeField] private float viewDistance = 18f;
+        [SerializeField] private float viewDistance = 22f;
         [Tooltip("적의 시야각")]
         [SerializeField] private float viewAngle = 120f;
         [Tooltip("적의 눈높이")]
@@ -30,13 +30,19 @@ namespace Squad
         [Tooltip("플레이어의 키")]
         [SerializeField] private float playerHeight = 1.2f;
         [Tooltip("Detection을 수행할 주기")]
-        [SerializeField] private float detectInterval = 0.4f;
+        [SerializeField] private float detectInterval = 0.2f;
 
         [Header("○ 불빛 — 불(모닥불, 횃불) 근처의 플레이어는 더 멀리서도 보인다")]
         [Tooltip("첫 라운드에서, 불빛 안의 플레이어를 볼 수 있는 거리의 배율. 1이면 평소와 같다")]
         [SerializeField] private float litViewMultiplierFirstRound = 1f;
         [Tooltip("마지막 라운드에서의 배율. 라운드가 오를수록 첫 라운드 값에서 이 값으로 고르게 커진다")]
         [SerializeField] private float litViewMultiplierLastRound = 2.5f;
+
+        [Header("○ 발견 소리 — 플레이어를 못 보다가 막 발견한 순간에 낸다")]
+        [Tooltip("발견했을 때 재생할 소리. 거리와 상관없이 항상 같은 크기로 들린다. 비워두면 소리를 내지 않는다")]
+        [SerializeField] private AudioClip spottedSound;
+        [Tooltip("발견 소리가 한 번 난 뒤, 다시 날 수 있을 때까지의 시간(초). 모든 적이 함께 쓴다")]
+        [SerializeField] private float spottedSoundCooldown = 3f;
 
         private float _detectTimer;
         private DimensionController dimensionController;
@@ -69,8 +75,9 @@ namespace Squad
         // 1. 플레이어가 같은 차원에 있는가? (Transform으로 알 수는 없고, DimensionMember를 통해 확인)
         public bool IsInSameDimension()
         {
+            // 같은 차원이어도, 플레이어가 막 넘어온 직후의 유예 시간 동안에는 감지하지 못한다.
             if (dimensionController != null && enemy != null)
-                return dimensionController.CompareDimension(enemy);
+                return dimensionController.CanDetectPlayer(enemy);
 
             return false;
         }
@@ -165,6 +172,10 @@ namespace Squad
             && IsInViewAngle(target)
             && HasLineOfSight(target);
 
+            // 못 보다가 막 본 순간에만 발견 소리를 낸다. (보고 있는 동안 계속 울리지 않도록)
+            if (canSee && !visibleJustBefore)
+                PlaySpottedSound();
+
             if (canSee)
                 // 플레이어가 시야에 있으면, 매번 호출하여 그 위치를 업데이트
                 SquadBlackboard.Instance.ReportSighting(enemy, target.position);
@@ -176,6 +187,27 @@ namespace Squad
 
             // 이번 실행의 결과를 기억
             visibleJustBefore = canSee;
+        }
+
+        // 마지막으로 발견 소리가 난 시각. 적이 여럿이어도 소리가 겹치지 않도록 모든 적이 함께 쓴다.
+        private static float _lastSpottedSoundTime = float.NegativeInfinity;
+
+        /// <summary>
+        /// 발견 소리를 낸다. 플레이어에게 "들켰다"는 것을 알리는 소리이므로, 적이 멀리 있어도 똑같이 들려야 한다.
+        /// 그래서 위치가 있는 3D 소리가 아니라 2D 소리(PlayUI)로 재생한다.
+        ///
+        /// 플레이어가 나무 사이를 지나가면 "보임 → 안 보임 → 보임"이 짧은 사이에 되풀이될 수 있다.
+        /// 그때마다 소리가 나지 않도록, 한 번 난 뒤에는 일정 시간 동안 다시 내지 않는다.
+        /// </summary>
+        private void PlaySpottedSound()
+        {
+            if (spottedSound == null || SfxPlayer.Instance == null)
+                return;
+            if (Time.time - _lastSpottedSoundTime < spottedSoundCooldown)
+                return;
+
+            _lastSpottedSoundTime = Time.time;
+            SfxPlayer.Instance.PlayUI(spottedSound);
         }
 
         private void OnDrawGizmosSelected()

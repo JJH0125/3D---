@@ -14,28 +14,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   walking:
     name: Walking
-    radius: 10
+    radius: 4
     duration: 0
     alert: 1
     canCrossDimension: 0
     clip: {fileID: 0}
   running:
     name: Running
-    radius: 25
+    radius: 13
     duration: 0
     alert: 1
     canCrossDimension: 0
     clip: {fileID: 0}
   generator:
     name: Generator
-    radius: 80
+    radius: 45
     duration: 6
     alert: 2
     canCrossDimension: 1
     clip: {fileID: 0}
   decoy:
     name: Decoy
-    radius: 40
+    radius: 30
     duration: 0
     alert: 1
     canCrossDimension: 0

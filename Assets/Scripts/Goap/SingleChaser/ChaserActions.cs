@@ -83,6 +83,13 @@ namespace Squad
             /// 연출이 끝날 때 게임 오버가 된다.
             if (arrived)
             {
+                // 계획은 일정한 간격으로만 다시 세우므로, 플레이어가 방금 다른 차원으로 넘어갔어도
+                // 다음 계획 전까지는 이 행동이 계속 실행된다. 그 사이에 닿았다고 잡아 버리지 않도록,
+                // 잡는 순간에 지금도 감지할 수 있는 상대인지 한 번 더 확인한다.
+                DimensionController dimensions = DimensionController.Instance;
+                if (dimensions != null && !dimensions.CanDetectPlayer(ctx.Self.GetComponent<DimensionMember>()))
+                    return true;
+
                 Jumpscare jumpscare = ctx.Self.GetComponent<Jumpscare>();
                 if (jumpscare != null)
                     jumpscare.Play(ctx.Player);

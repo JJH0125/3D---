@@ -81,5 +81,6 @@ namespace Squad
         public static Sound Running => Library.Running;
         public static Sound Generator => Library.Generator;
         public static Sound Decoy => Library.Decoy;
+        public static Sound DimensionShift => Library.DimensionShift;
     }
 }

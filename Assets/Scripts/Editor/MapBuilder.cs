@@ -304,7 +304,6 @@ namespace Squad
                 PlacePlayer(root);
                 PlaceEnemies(root);
                 PlaceGenerators(root);
-                PlaceSingle(root.GetComponentInChildren<Portal>(true), 'P', "포탈");
                 PlaceSingle(root.GetComponentInChildren<Exit>(true), 'E', "출구");
 
                 PrefabUtility.SaveAsPrefabAsset(root, StagePrefabPath);

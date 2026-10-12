@@ -30,7 +30,7 @@ namespace Squad
         [Tooltip("이 속도(m/s)보다 빠르게 움직이면 걷는 것으로 본다")]
         [SerializeField] private float moveThreshold = 0.5f;
         [Tooltip("Walk 애니메이션이 원래 빠르기로 재생되는 이동 속도(m/s). 발이 미끄러져 보이면 이 값을 조절")]
-        [SerializeField] private float walkAnimMoveSpeed = 5f;
+        [SerializeField] private float walkAnimMoveSpeed = 6f;
         [Tooltip("Walk 애니메이션의 최대 재생 배속")]
         [SerializeField] private float maxAnimSpeed = 2.5f;
 

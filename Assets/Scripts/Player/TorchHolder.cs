@@ -30,9 +30,9 @@ namespace Squad
         [Tooltip("횃불을 드는 각도. 플레이어 오브젝트 기준")]
         [SerializeField] private Vector3 holdRotation = new Vector3(10f, 0f, -25f);
         [Tooltip("던질 때 앞으로 나가는 속도(m/s)")]
-        [SerializeField] private float throwSpeed = 24f;
+        [SerializeField] private float throwSpeed = 48f;
         [Tooltip("던질 때 위로 솟는 속도(m/s). 클수록 높이, 멀리 날아간다")]
-        [SerializeField] private float throwUpSpeed = 9f;
+        [SerializeField] private float throwUpSpeed = 24f;
         [Tooltip("던진 횃불이 떨어지는 소리를 들을 수 있는 적의 레이어")]
         [SerializeField] private LayerMask enemyLayer = (1 << 8) | (1 << 9);   // RealEnemy + FakeEnemy
 
@@ -75,7 +75,20 @@ namespace Squad
             // 손에서 떼어 Stage의 자식으로 옮긴다. 위치와 방향은 지금 보이는 그대로 유지한다.
             torch.transform.SetParent(transform.parent, true);
 
-            Vector3 velocity = transform.forward * throwSpeed + Vector3.up * throwUpSpeed;
+            // 비탈에 서 있으면 그 기울기를 따라 던진다.
+            // 수평으로만 던지면 오르막을 향했을 때 횃불이 발 앞의 땅에 바로 박힌다.
+            Vector3 forward = transform.forward;
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain != null)
+            {
+                // GetInterpolatedNormal은 지형의 한쪽 끝을 0, 반대쪽 끝을 1로 본 비율 좌표를 받는다.
+                Vector3 local = transform.position - terrain.transform.position;
+                Vector3 size = terrain.terrainData.size;
+                Vector3 groundNormal = terrain.terrainData.GetInterpolatedNormal(local.x / size.x, local.z / size.z);
+                forward = Vector3.ProjectOnPlane(forward, groundNormal).normalized;
+            }
+
+            Vector3 velocity = forward * throwSpeed + Vector3.up * throwUpSpeed;
             torch.Throw(velocity, _player.myDimension, enemyLayer);
         }
     }

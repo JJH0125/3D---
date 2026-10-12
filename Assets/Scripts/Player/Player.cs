@@ -17,10 +17,10 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [Header("○ 튜닝 값 — 자유롭게 조절")]
-    [Tooltip("플레이어의 이동속도")]
-    [SerializeField] private float moveSpeed;
-    [Tooltip("달리는 속도에 대한 걷는 속도의 비율")]
-    [SerializeField] private float slowDownWhileWalk;
+    [Tooltip("달리는 속도")]
+    [SerializeField] private float moveSpeed = 15f;
+    [Tooltip("걷는 속도 (Walk 키를 누르고 있을 때)")]
+    [SerializeField] private float walkSpeed = 7.5f;
     [Tooltip("중력 가속도(음수)")]
     [SerializeField] private float gravity = -20f;
     [Tooltip("점프 가능한 높이(m)")]
@@ -107,7 +107,7 @@ public class Player : MonoBehaviour
     void Move()
     {
         horizontal = (cameraRight * X_Axis + cameraForward * Z_Axis).normalized;
-        horizontal *= moveSpeed * (isWalk ? slowDownWhileWalk : 1f);
+        horizontal *= isWalk ? walkSpeed : moveSpeed;
 
         if (isJump)
         {

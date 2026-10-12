@@ -201,7 +201,7 @@ namespace Squad
         private bool CanSeePlayerNow()
         {
             if (DimensionController.Instance != null && enemy != null)
-                return DimensionController.Instance.CompareDimension(enemy);
+                return DimensionController.Instance.CanDetectPlayer(enemy);
 
             return false;
         }
