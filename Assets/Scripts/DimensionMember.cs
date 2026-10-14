@@ -3,9 +3,7 @@ using UnityEngine;
 namespace Squad
 {
     /// <summary>
-    /// 차원을 초월하지 못하고, 넘나들지도 못하는, 차원 정보가 고정되어 있는 적에게
-    /// 붙이는 딱지같은 개념. DimensionController가 이 딱지를 보고, 플레이어와 같은 차원에 있는 적만
-    /// MeshRenderer를 켜고, 다른 차원에 있는 적은 MeshRenderer를 꺼서 보이지 않게 한다.
+    /// 적이 각각 가지는, 차원이 담긴 일종의 이름표.
     /// </summary>
     public class DimensionMember : MonoBehaviour
     {

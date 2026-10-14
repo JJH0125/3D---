@@ -5,28 +5,37 @@ using UnityEngine;
 namespace Squad
 {
     /// <summary>
-    /// ChaserAction이 동작하는 데 필요한 정보를
-    /// 하나로 묶어 전달하는 정보 꾸러미.
+    /// 적이 각각 가지는, 정보가 적힌 일종의 문서.
+    /// GoapAction이 들여다보는 용도.
+    /// GoapAction이 순수 클래스이므로, Context 또한 이에 맞게 순수 클래스로 정의.
+    /// 
+    /// 저장하고 있는 것 :
+    /// 자신과 플레이어의 Transform
+    /// 자신이 사용할 블랙보드
+    /// 자신의 Locomotion
+    /// 자신의 DimensionMember
+    /// 자신의 Action이 사용할 수치 값들 (잡는 거리, 도착 거리, 배회 시간)
     /// </summary>
     public class ChaserContext
     {
         // 이 정보 꾸러미를 소유한 추격자.
         public SquadAgent Agent;
-        // 사용할 공유 칠판.
+        // 자신이 사용할 공유 칠판.
         public SquadBlackboard Blackboard;
-        // 추격자 자신의 Transform.
+        // 자신의 Transform.
         public Transform Self;
         // 추격할 플레이어의 Transform.
         public Transform Player;
-
-        // Used by the horror-chaser action set (chase / investigate / wander).
-        // Filled in by HorrorChaserAgent; left null by the squad demo, which
-        // uses its own placeholder movement instead.
+        // 자신의 차원 이름표.
+        public DimensionMember Member;
+        // 적의 이동을 담당하는 컴포넌트.
         public ChaserLocomotion Locomotion;
-        public float CatchRadius = 1.2f;
-        public float ArriveRadius = 0.6f;
-        // 한 WanderStep 완료 후 다음 WanderStep 시작 전 대기하는 시간 (이 범위에서 매번 랜덤 선택).
-        public float WanderPauseMin = 1.5f;
-        public float WanderPauseMax = 4f;
+        // ReachPlayer가 사용하는 잡는 판정 거리.
+        public float CatchRadius;
+        // MoveToSound, WanderStep이 사용하는 목표 지점 도착 판정 거리.
+        public float ArriveRadius;
+        // 한 WanderStep 완료 후 다음 WanderStep 시작 전 대기하는 최소/최대 시간(이 범위에서 매번 랜덤 선택).
+        public float WanderPauseMin;
+        public float WanderPauseMax;
     }
 }

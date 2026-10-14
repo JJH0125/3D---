@@ -87,7 +87,7 @@ namespace Squad
                 // 다음 계획 전까지는 이 행동이 계속 실행된다. 그 사이에 닿았다고 잡아 버리지 않도록,
                 // 잡는 순간에 지금도 감지할 수 있는 상대인지 한 번 더 확인한다.
                 DimensionController dimensions = DimensionController.Instance;
-                if (dimensions != null && !dimensions.CanDetectPlayer(ctx.Self.GetComponent<DimensionMember>()))
+                if (dimensions != null && !dimensions.CanDetectPlayer(ctx.Member))
                     return true;
 
                 Jumpscare jumpscare = ctx.Self.GetComponent<Jumpscare>();
