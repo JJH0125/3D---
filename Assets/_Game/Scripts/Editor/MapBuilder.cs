@@ -23,7 +23,7 @@ namespace Squad
     /// </summary>
     public static class MapBuilder
     {
-        private const string StagePrefabPath = "Assets/Prefab/Stage.prefab";
+        private const string StagePrefabPath = "Assets/_Game/Prefabs/Stage.prefab";
         private const string MapRootName = "GeneratedMap";
 
         /// <summary>

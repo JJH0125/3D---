@@ -51,7 +51,7 @@ using UnityEngine;
 /// </summary>
 public class ForestMapTool : EditorWindow
 {
-    private const string Folder = "Assets/Terrain";
+    private const string Folder = "Assets/_Game/Environment/Terrain";
     private const string DataPath = Folder + "/ForestTerrainData.asset";
     private const string LayerPath = Folder + "/ForestGround.terrainlayer";
     private const string TerrainName = "Forest Terrain";
@@ -308,6 +308,21 @@ public class ForestMapTool : EditorWindow
         return group != null ? group.transform : null;
     }
 
+    // path의 폴더가 없으면 한 단계씩 만든다. (예: Assets/_Game/Environment/Terrain)
+    private static void EnsureFolder(string path)
+    {
+        string current = "Assets";
+        foreach (string part in path.Split('/'))
+        {
+            if (part == "Assets")
+                continue;
+            string next = current + "/" + part;
+            if (!AssetDatabase.IsValidFolder(next))
+                AssetDatabase.CreateFolder(current, part);
+            current = next;
+        }
+    }
+
     // 이 도구로 만든 지형을 씬에서 찾는다. 없으면 null.
     private static Terrain FindTerrain()
     {
@@ -318,8 +333,7 @@ public class ForestMapTool : EditorWindow
     // 지형과 경계 벽을 만든다. 다시 만들지 묻는 창에서 취소하면 아무것도 하지 않고 false를 돌려준다.
     private bool BuildTerrain()
     {
-        if (!AssetDatabase.IsValidFolder(Folder))
-            AssetDatabase.CreateFolder("Assets", "Terrain");
+        EnsureFolder(Folder);
 
         TerrainData data = AssetDatabase.LoadAssetAtPath<TerrainData>(DataPath);
         if (data == null)
@@ -701,7 +715,7 @@ public class ForestMapTool : EditorWindow
     /// 지형을 액자처럼 둘러싸는 바깥 땅 메시를 만든다.
     /// 칸 크기 OuterCellSize의 격자로 만들되, 지형에 완전히 덮이는 안쪽 칸은 빼고
     /// 지형 가장자리 바로 아래의 한 줄만 남긴다(지형보다 조금 낮게). 그래서 이음매에 틈이 보이지 않는다.
-    /// 메시와 재질은 Assets/Terrain에 저장해서 씬을 다시 열어도 남게 한다.
+    /// 메시와 재질은 Assets/_Game/Environment/Terrain에 저장해서 씬을 다시 열어도 남게 한다.
     /// </summary>
     private void BuildOuterGround(Terrain terrain)
     {

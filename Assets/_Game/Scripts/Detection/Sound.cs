@@ -67,7 +67,7 @@ namespace Squad
                     if (_library == null)
                     {
                         Debug.LogWarning("[SoundList] Resources/SoundLibrary 에셋이 없어 기본값을 사용합니다. " +
-                                         "Assets/Resources에서 Create > Squad > Sound Library로 만들어 주세요.");
+                                         "Assets/_Game/Resources에서 Create > Squad > Sound Library로 만들어 주세요.");
                         /// SoundLibrary.cs에 적힌 기본값들을 불러온다
                         _library = ScriptableObject.CreateInstance<SoundLibrary>();
                     }
