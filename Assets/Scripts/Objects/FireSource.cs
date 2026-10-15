@@ -77,6 +77,23 @@ namespace Squad
             _flickerOffset = Random.value * 100f;
         }
 
+        /// <summary>
+        /// 조명만 position으로 옮기고 닿는 거리를 range로 바꾼다. 손에 든 횃불이 앞쪽을 더 비추게 할 때 쓴다.
+        /// 불빛에 드러나는 범위(revealRadius)는 그대로 이 오브젝트(불)의 자리를 기준으로 잰다.
+        /// </summary>
+        public void PlaceLight(Vector3 position, float range)
+        {
+            _light.transform.position = position;
+            _light.range = range;
+        }
+
+        /// <summary>조명을 원래 자리(불 바로 위)와 원래 거리(lightRadius)로 되돌린다.</summary>
+        public void ResetLight()
+        {
+            _light.transform.position = transform.position + Vector3.up * lightHeight;
+            _light.range = lightRadius;
+        }
+
         private void OnEnable() => _all.Add(this);
 
         private void OnDisable() => _all.Remove(this);

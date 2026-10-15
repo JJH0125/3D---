@@ -11,6 +11,12 @@ namespace Squad
             GameManager.Instance.ResumeGame();
         }
 
+        // 타이틀로 돌아가기 버튼에 연결
+        public void OnClickTitle()
+        {
+            GameManager.Instance.ReturnToTitle();
+        }
+
         // 재시작 또는 메인화면 버튼에 연결
         public void OnClickRestart()
         {

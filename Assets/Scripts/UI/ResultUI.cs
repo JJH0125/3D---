@@ -11,5 +11,11 @@ namespace Squad
             // (timeScale은 GameManager가 Playing으로 바꿀 때 1로 되돌린다)
             GameManager.Instance.NextRound();
         }
+
+        // 타이틀로 돌아가기 버튼에 연결
+        public void OnClickTitle()
+        {
+            GameManager.Instance.ReturnToTitle();
+        }
     }
 }

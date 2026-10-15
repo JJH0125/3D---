@@ -14,8 +14,6 @@ namespace Squad
         // 종료 버튼의 OnClick 이벤트에 연결
         public void OnClickQuitGame()
         {
-            Debug.Log("게임을 종료합니다.");
-
             // Application.Quit은 에디터에서 무시되므로, 에디터에서는 플레이 모드를 끈다.
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;

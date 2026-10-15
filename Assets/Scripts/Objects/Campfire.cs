@@ -36,8 +36,8 @@ namespace Squad
             if (Time.timeScale == 0f)
                 return;
 
-            // 범위 안에 있고 빈손일 때만 집을 수 있다.
-            bool canTake = _holder != null && !_holder.HasTorch;
+            // 범위 안에 있고 빈손일 때만 집을 수 있다. (던진 직후 잠깐은 빈손이어도 집을 수 없다)
+            bool canTake = _holder != null && _holder.CanTakeTorch;
 
             if (canTake && Input.GetKeyDown(interactKey))
             {

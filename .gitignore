@@ -73,3 +73,6 @@
 # Unity가 자동으로 만드는 프로젝트 파일
 *.csproj
 *.sln
+
+# 빌드 결과물
+/Builds

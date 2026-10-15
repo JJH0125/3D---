@@ -125,6 +125,23 @@ namespace Squad
             StartGame();
         }
 
+        /// <summary>
+        /// 일시정지, 게임 오버, 라운드 클리어 화면의 "타이틀로 돌아가기" 버튼에서 호출.
+        /// 진행 중인 Stage가 있으면 치우고, 라운드를 1로 되돌린 뒤 타이틀 화면으로 간다.
+        /// 타이틀은 같은 씬의 화면이라 씬을 다시 불러오지 않는다.
+        /// </summary>
+        public void ReturnToTitle()
+        {
+            if (currentStage != null)
+                Destroy(currentStage);
+            currentStage = null;
+
+            ClearExitAndGenerators();
+            CurrentRound = 1;
+            RefreshStatus();
+            ChangeState(GameState.Title);
+        }
+
         public void PauseGame()
         {
             ChangeState(GameState.Pause);

@@ -42,6 +42,12 @@ using UnityEngine;
 ///
 /// 같은 시드로는 항상 같은 숲이 나온다. 그래서 지형의 높이만 바꿔 다시 만들어도
 /// 나무는 같은 자리에, 새 높이에 맞춰 다시 심어진다.
+///
+/// ■ 경계 숲
+/// 경계 벽 바깥에 보기만 하는 땅(Outer Ground)과 숲(Border Forest)을 둘러서, 맵의 끝이 보이지 않고
+/// 숲이 계속 이어지는 것처럼 보이게 한다. 바깥 땅은 바깥으로 갈수록 서서히 높아진다.
+/// 나무와 풀은 안쪽과 같은 밀도로 심고, Collider는 모두 뺀다. 몸은 경계 벽이 막는다.
+/// 지형을 다시 만들었으면 경계 숲도 다시 만들어야 가장자리 높이가 맞는다.
 /// </summary>
 public class ForestMapTool : EditorWindow
 {
@@ -51,6 +57,19 @@ public class ForestMapTool : EditorWindow
     private const string TerrainName = "Forest Terrain";
     private const string WallsName = "Boundary Walls";
     private const string PropsName = "Forest Props";
+    private const string OuterGroundName = "Outer Ground";
+    private const string BorderForestName = "Border Forest";
+    /// 만든 것들을 묶어 두는 오브젝트의 이름. 씬에 있으면 처음 만들 때 그 아래에 둔다.
+    /// (지형과 안쪽 숲은 InnerMap, 바깥 땅과 경계 숲은 OuterMap)
+    private const string InnerGroupName = "InnerMap";
+    private const string OuterGroupName = "OuterMap";
+    private const string OuterMeshPath = Folder + "/OuterGround.asset";
+    private const string OuterMaterialPath = Folder + "/OuterGround.mat";
+
+    /// 바깥 땅 메시의 칸 크기(m). 지형의 가로세로 길이와 바깥 땅의 너비를 이 값으로 나눠떨어지게 맞춘다.
+    private const float OuterCellSize = 2f;
+    /// 바깥 땅 중 지형 아래에 깔리는 부분을 지형보다 얼마나 낮출지(m). 지형과 겹쳐 깜빡이지 않게 한다.
+    private const float OuterTuckDepth = 0.3f;
 
     /// 높이맵의 가로세로 칸 수. Unity 규칙상 (2의 거듭제곱 + 1)이어야 한다.
     /// 513이면 200m 지형에서 한 칸이 약 0.4m다.
@@ -89,6 +108,10 @@ public class ForestMapTool : EditorWindow
     [SerializeField] private float _playerClearRadius = 8f;
     [SerializeField] private int _seed = 1;
 
+    // 경계 숲
+    [SerializeField] private float _borderWidth = 60f;
+    [SerializeField] private float _borderRise = 15f;
+
     private Vector2 _scroll;
     private string _message = "";
 
@@ -121,6 +144,8 @@ public class ForestMapTool : EditorWindow
         DrawTerrainSettings();
         EditorGUILayout.Space();
         DrawForestSettings();
+        EditorGUILayout.Space();
+        DrawBorderSettings();
         EditorGUILayout.Space();
         DrawButtons();
 
@@ -202,6 +227,20 @@ public class ForestMapTool : EditorWindow
         EditorGUILayout.EndHorizontal();
     }
 
+    private void DrawBorderSettings()
+    {
+        EditorGUILayout.LabelField("■ 경계 숲 (보기만 하는 바깥 숲)", EditorStyles.boldLabel);
+        _borderWidth = EditorGUILayout.Slider(
+            new GUIContent("바깥 땅의 너비 (m)", "경계 벽 바깥으로 이만큼 땅과 숲을 더 둘러서, 숲이 이어지는 것처럼 보이게 한다"),
+            _borderWidth, 10f, 150f);
+        _borderRise = EditorGUILayout.Slider(
+            new GUIContent("바깥으로 갈수록 높아지는 정도 (m)", "바깥 땅의 끝이 경계보다 이만큼 높다. 높을수록 땅 끝이 덜 보인다"),
+            _borderRise, 0f, 50f);
+        EditorGUILayout.HelpBox(
+            "나무와 풀은 안쪽 숲과 같은 밀도로 심는다(나무 개수, 풀·덤불 개수를 넓이에 비례해 늘림).\n" +
+            "보기만 하는 숲이라 Collider를 모두 뺀다. 몸은 경계 벽이 막는다.", MessageType.None);
+    }
+
     private void DrawButtons()
     {
         // 지형의 높이가 바뀌면 나무도 새 높이에 맞춰 다시 심어야 하므로, 보통은 이 버튼 하나면 된다.
@@ -216,6 +255,10 @@ public class ForestMapTool : EditorWindow
         // 지형과 높이는 그대로 두고 나무 배치만 바꾸고 싶을 때
         if (GUILayout.Button("숲만 다시 심기"))
             Scatter();
+
+        // 경계 바깥에 보기만 하는 땅과 숲을 두른다. 지형을 다시 만들었으면 이것도 다시 눌러야 가장자리가 맞는다.
+        if (GUILayout.Button("경계 숲 만들기 (바깥 땅 + 나무·풀)"))
+            BuildBorder();
 
         // 붓으로 고친 높이를 지우지 않고 벽만 고치고 싶을 때
         if (GUILayout.Button("경계 벽만 다시 두르기"))
@@ -250,6 +293,20 @@ public class ForestMapTool : EditorWindow
     // 코사인 곡선은 반경의 절반 지점에서 가장 가파르고, 그 기울기는 (높이 × π) ÷ (반경 × 2)다.
     private float SteepestHillAngle()
         => Mathf.Atan(_hillHeight * Mathf.PI / (_hillRadius * 2f)) * Mathf.Rad2Deg;
+
+    /// <summary>
+    /// 새로 만들 오브젝트를 둘 부모. 전에 만든 것이 있으면 그것과 같은 부모에 두어서, 씬에서 묶어 둔 구조가 유지되게 한다.
+    /// 처음 만드는 것이면 묶음 오브젝트(groupName)가 씬에 있을 때 그 아래에, 없으면 맨 바깥에 둔다.
+    /// 묶음 오브젝트는 원점에 두고 회전과 크기를 바꾸지 않아야 지형과 숲의 자리가 어긋나지 않는다.
+    /// </summary>
+    private static Transform ParentFor(GameObject previous, string groupName)
+    {
+        if (previous != null)
+            return previous.transform.parent;
+
+        GameObject group = GameObject.Find(groupName);
+        return group != null ? group.transform : null;
+    }
 
     // 이 도구로 만든 지형을 씬에서 찾는다. 없으면 null.
     private static Terrain FindTerrain()
@@ -319,10 +376,15 @@ public class ForestMapTool : EditorWindow
         {
             terrainObject = Terrain.CreateTerrainGameObject(data);
             terrainObject.name = TerrainName;
+            terrainObject.transform.SetParent(ParentFor(null, InnerGroupName), false);
             Undo.RegisterCreatedObjectUndo(terrainObject, "지형 만들기");
         }
         // Terrain은 한쪽 모서리가 기준점이라, 절반만큼 당겨야 한가운데가 원점에 온다.
         terrainObject.transform.position = new Vector3(-_size * 0.5f, 0f, -_size * 0.5f);
+        // 바닥은 Floor 레이어에 둔다. 적의 시야(VisionCensor)가 이 레이어를 통과하지 못하므로 언덕이 시야를 가린다.
+        int floorLayer = LayerMask.NameToLayer("Floor");
+        if (floorLayer >= 0)
+            terrainObject.layer = floorLayer;
 
         BuildWalls(terrainObject.GetComponent<Terrain>());
 
@@ -425,11 +487,13 @@ public class ForestMapTool : EditorWindow
         }
 
         GameObject oldRoot = GameObject.Find(PropsName);
+        Transform parent = ParentFor(oldRoot, InnerGroupName);
         if (oldRoot != null)
             Undo.DestroyObjectImmediate(oldRoot);
 
         var root = new GameObject(PropsName);
         Undo.RegisterCreatedObjectUndo(root, "숲 심기");
+        root.transform.SetParent(parent, false);
         Transform treeRoot = new GameObject("Trees").transform;
         Transform plantRoot = new GameObject("Plants").transform;
         treeRoot.SetParent(root.transform);
@@ -556,8 +620,8 @@ public class ForestMapTool : EditorWindow
     private static float FlatDistance(Vector3 a, Vector3 b)
         => Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
 
-    // 원본 하나를 복제해서 spot에 심는다.
-    private void Plant(GameObject original, Vector3 spot, Transform parent)
+    // 원본 하나를 복제해서 spot에 심고, 심은 복제본을 돌려준다.
+    private GameObject Plant(GameObject original, Vector3 spot, Transform parent)
     {
         Transform source = original.transform;
         GameObject clone = Instantiate(original, parent);
@@ -571,5 +635,286 @@ public class ForestMapTool : EditorWindow
         // 원본이 세워져 있던 방향을 유지한 채, 위에서 봤을 때의 방향만 무작위로 돌린다.
         clone.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * source.rotation;
         clone.transform.position = spot;
+        return clone;
+    }
+
+    // ── 경계 숲 ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// 경계 벽 바깥에 보기만 하는 땅(메시)과 숲을 두른다. 전에 만든 것은 지우고 새로 만든다.
+    /// 지형의 가장자리가 훤히 보이지 않고, 숲이 계속 이어지는 것처럼 보이게 하기 위한 것이다.
+    ///
+    /// 바깥 땅을 Terrain으로 하나 더 만들지 않는 이유:
+    /// 여러 스크립트(적 이동, 시작 위치, 횃불 등)가 Terrain.activeTerrain으로 "씬의 지형"을 하나만 찾아 쓰는데,
+    /// 지형이 둘이면 엉뚱한 쪽을 잡을 수 있다.
+    /// </summary>
+    private void BuildBorder()
+    {
+        Terrain terrain = FindTerrain();
+        if (terrain == null)
+        {
+            _message = "씬에 이 도구로 만든 지형이 없습니다. 먼저 지형을 만드세요.";
+            return;
+        }
+
+        BuildOuterGround(terrain);
+
+        int plantedTrees = 0;
+        int plantedPlants = 0;
+        if (_source != null)
+            PlantBorderForest(terrain, out plantedTrees, out plantedPlants);
+
+        EditorSceneManager.MarkSceneDirty(terrain.gameObject.scene);
+        _message = $"바깥 땅을 두르고 나무 {plantedTrees}그루, 풀·덤불 {plantedPlants}개를 심었습니다. " +
+                   "씬을 저장(Ctrl+S)해야 유지된다.";
+        if (_source == null)
+            _message += "\n원본 숲(ForestRoad)이 비어 있어서 나무와 풀은 심지 않았습니다.";
+    }
+
+    /// <summary>
+    /// 바깥 땅의 높이. 지형 위(경계 포함)에서는 지형의 높이와 같고,
+    /// 경계 밖에서는 가장 가까운 가장자리의 높이에서 시작해 바깥으로 갈수록 _borderRise만큼 서서히 높아진다.
+    /// 경계에서 높이가 딱 맞으므로 지형과 바깥 땅 사이에 턱이 생기지 않는다.
+    /// </summary>
+    private float OuterHeightAt(Terrain terrain, float x, float z)
+    {
+        Vector3 origin = terrain.transform.position;
+        Vector3 size = terrain.terrainData.size;
+        float edgeX = Mathf.Clamp(x, origin.x, origin.x + size.x);
+        float edgeZ = Mathf.Clamp(z, origin.z, origin.z + size.z);
+        float edgeHeight = terrain.SampleHeight(new Vector3(edgeX, 0f, edgeZ)) + origin.y;
+
+        float outside = Vector2.Distance(new Vector2(x, z), new Vector2(edgeX, edgeZ));
+        if (outside <= 0f)
+            return edgeHeight;
+
+        // 경계에서는 기울기 0으로 시작해서 바깥 끝에서 다시 평평해지는 곡선(smoothstep)
+        float t = Mathf.Clamp01(outside / _borderWidth);
+        float rise = _borderRise * t * t * (3f - 2f * t);
+        // 안쪽처럼 얕은 굴곡을 준다. 경계 근처에서는 굴곡을 줄여 지형과 매끄럽게 이어지게 한다.
+        float bumps = (Mathf.PerlinNoise((x + 1000f) / _bumpSize, (z + 1000f) / _bumpSize) - 0.5f)
+                      * _bumpHeight * Mathf.Clamp01(outside / 10f);
+        return edgeHeight + rise + bumps;
+    }
+
+    /// <summary>
+    /// 지형을 액자처럼 둘러싸는 바깥 땅 메시를 만든다.
+    /// 칸 크기 OuterCellSize의 격자로 만들되, 지형에 완전히 덮이는 안쪽 칸은 빼고
+    /// 지형 가장자리 바로 아래의 한 줄만 남긴다(지형보다 조금 낮게). 그래서 이음매에 틈이 보이지 않는다.
+    /// 메시와 재질은 Assets/Terrain에 저장해서 씬을 다시 열어도 남게 한다.
+    /// </summary>
+    private void BuildOuterGround(Terrain terrain)
+    {
+        Vector3 origin = terrain.transform.position;
+        Vector3 size = terrain.terrainData.size;
+        int borderCells = Mathf.CeilToInt(_borderWidth / OuterCellSize);
+        int innerCellsX = Mathf.RoundToInt(size.x / OuterCellSize);
+        int innerCellsZ = Mathf.RoundToInt(size.z / OuterCellSize);
+        int cellsX = innerCellsX + borderCells * 2;
+        int cellsZ = innerCellsZ + borderCells * 2;
+        float startX = origin.x - borderCells * OuterCellSize;
+        float startZ = origin.z - borderCells * OuterCellSize;
+
+        // 바닥 텍스처는 지형에 칠한 첫 번째 텍스처를 그대로 쓴다. 텍스처 한 장이 덮는 너비도 같게 맞춘다.
+        TerrainLayer layer = terrain.terrainData.terrainLayers.Length > 0 ? terrain.terrainData.terrainLayers[0] : null;
+        Vector2 tile = layer != null ? layer.tileSize : new Vector2(_textureTile, _textureTile);
+
+        int rowLength = cellsX + 1;
+        var vertices = new Vector3[rowLength * (cellsZ + 1)];
+        var uvs = new Vector2[vertices.Length];
+        for (int z = 0; z <= cellsZ; z++)
+        {
+            for (int x = 0; x <= cellsX; x++)
+            {
+                float worldX = startX + x * OuterCellSize;
+                float worldZ = startZ + z * OuterCellSize;
+                int innerX = x - borderCells;
+                int innerZ = z - borderCells;
+                bool underTerrain = innerX > 0 && innerX < innerCellsX && innerZ > 0 && innerZ < innerCellsZ;
+
+                float height = underTerrain
+                    ? terrain.SampleHeight(new Vector3(worldX, 0f, worldZ)) + origin.y - OuterTuckDepth
+                    : OuterHeightAt(terrain, worldX, worldZ);
+
+                int index = z * rowLength + x;
+                vertices[index] = new Vector3(worldX, height, worldZ);
+                uvs[index] = new Vector2(worldX / tile.x, worldZ / tile.y);
+            }
+        }
+
+        var triangles = new List<int>();
+        for (int z = 0; z < cellsZ; z++)
+        {
+            for (int x = 0; x < cellsX; x++)
+            {
+                // 지형에 완전히 덮이는 칸은 뺀다. (가장자리에 닿는 칸은 남긴다)
+                int innerX = x - borderCells;
+                int innerZ = z - borderCells;
+                bool hidden = innerX >= 1 && innerX + 1 <= innerCellsX - 1 &&
+                              innerZ >= 1 && innerZ + 1 <= innerCellsZ - 1;
+                if (hidden)
+                    continue;
+
+                int v00 = z * rowLength + x;
+                int v10 = v00 + 1;
+                int v01 = v00 + rowLength;
+                int v11 = v01 + 1;
+                // 위에서 봤을 때 시계 방향이어야 윗면이 보인다.
+                triangles.Add(v00); triangles.Add(v01); triangles.Add(v11);
+                triangles.Add(v00); triangles.Add(v11); triangles.Add(v10);
+            }
+        }
+
+        Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(OuterMeshPath);
+        if (mesh == null)
+        {
+            mesh = new Mesh { name = "OuterGround" };
+            AssetDatabase.CreateAsset(mesh, OuterMeshPath);
+        }
+        else
+            mesh.Clear();
+
+        // 바깥 땅을 넓게 잡으면 꼭짓점이 65,535개를 넘을 수 있다.
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.vertices = vertices;
+        mesh.uv = uvs;
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        mesh.RecalculateBounds();
+        EditorUtility.SetDirty(mesh);
+
+        Material material = GetOuterMaterial(layer);
+        AssetDatabase.SaveAssets();
+
+        GameObject old = GameObject.Find(OuterGroundName);
+        Transform parent = ParentFor(old, OuterGroupName);
+        if (old != null)
+            Undo.DestroyObjectImmediate(old);
+
+        // 꼭짓점이 월드 좌표로 들어 있으므로 원점에 둔다. 몸은 경계 벽이 막으므로 Collider는 붙이지 않는다.
+        var ground = new GameObject(OuterGroundName);
+        Undo.RegisterCreatedObjectUndo(ground, "바깥 땅 만들기");
+        ground.transform.SetParent(parent, false);
+        ground.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var groundRenderer = ground.AddComponent<MeshRenderer>();
+        groundRenderer.sharedMaterial = material;
+        groundRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+    }
+
+    // 바깥 땅에 쓸 재질(Standard)을 만들거나, 이미 있으면 텍스처만 다시 맞춰서 돌려준다.
+    private Material GetOuterMaterial(TerrainLayer layer)
+    {
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(OuterMaterialPath);
+        if (material == null)
+        {
+            material = new Material(Shader.Find("Standard"));
+            AssetDatabase.CreateAsset(material, OuterMaterialPath);
+        }
+
+        Texture2D diffuse = layer != null ? layer.diffuseTexture : _groundTexture;
+        Texture2D normal = layer != null ? layer.normalMapTexture : _groundNormal;
+        material.mainTexture = diffuse;
+        if (normal != null)
+        {
+            material.SetTexture("_BumpMap", normal);
+            material.EnableKeyword("_NORMALMAP");
+        }
+        // 지형처럼 번들거리지 않게 한다.
+        material.SetFloat("_Glossiness", 0f);
+        EditorUtility.SetDirty(material);
+        return material;
+    }
+
+    /// <summary>
+    /// 바깥 땅에 나무와 풀을 안쪽 숲과 같은 밀도로 심는다.
+    /// (안쪽의 나무 개수와 풀·덤불 개수를, 바깥 땅의 넓이가 지형의 몇 배인지에 맞춰 늘린다)
+    /// 보기만 하는 숲이므로 복제본의 Collider를 모두 뺀다. 그래서 물리 계산 부담이 없다.
+    /// </summary>
+    private void PlantBorderForest(Terrain terrain, out int plantedTrees, out int plantedPlants)
+    {
+        plantedTrees = 0;
+        plantedPlants = 0;
+
+        CollectSources(out List<GameObject> trees, out List<GameObject> plants);
+
+        GameObject oldRoot = GameObject.Find(BorderForestName);
+        Transform parent = ParentFor(oldRoot, OuterGroupName);
+        if (oldRoot != null)
+            Undo.DestroyObjectImmediate(oldRoot);
+
+        var root = new GameObject(BorderForestName);
+        Undo.RegisterCreatedObjectUndo(root, "경계 숲 심기");
+        root.transform.SetParent(parent, false);
+        Transform treeRoot = new GameObject("Trees").transform;
+        Transform plantRoot = new GameObject("Plants").transform;
+        treeRoot.SetParent(root.transform);
+        plantRoot.SetParent(root.transform);
+
+        Vector3 size = terrain.terrainData.size;
+        float innerArea = size.x * size.z;
+        float outerArea = (size.x + _borderWidth * 2f) * (size.z + _borderWidth * 2f) - innerArea;
+        int treeCount = Mathf.RoundToInt(_treeCount * outerArea / innerArea);
+        int plantCount = Mathf.RoundToInt(_plantCount * outerArea / innerArea);
+
+        // 안쪽 숲과 다른 무늬가 나오도록 시드를 조금 바꾼다.
+        Random.State oldState = Random.state;
+        Random.InitState(_seed + 7919);
+
+        var treeSpots = new List<Vector3>();
+        for (int i = 0; i < treeCount && trees.Count > 0; i++)
+        {
+            if (!TryPickBorderSpot(terrain, treeSpots, _treeSpacing, out Vector3 spot))
+                continue;
+
+            treeSpots.Add(spot);
+            RemoveColliders(Plant(trees[Random.Range(0, trees.Count)], spot, treeRoot));
+            plantedTrees++;
+        }
+
+        for (int i = 0; i < plantCount && plants.Count > 0; i++)
+        {
+            if (!TryPickBorderSpot(terrain, null, 0f, out Vector3 spot))
+                continue;
+
+            RemoveColliders(Plant(plants[Random.Range(0, plants.Count)], spot, plantRoot));
+            plantedPlants++;
+        }
+
+        Random.state = oldState;
+    }
+
+    // 바깥 땅 위의 무작위 자리를 뽑는다. 경계 안쪽(플레이하는 곳)과 경계 바로 바깥 1m는 비운다.
+    private bool TryPickBorderSpot(Terrain terrain, List<Vector3> others, float minDistanceToOthers, out Vector3 spot)
+    {
+        Vector3 origin = terrain.transform.position;
+        Vector3 size = terrain.terrainData.size;
+        const float gap = 1f;
+
+        for (int i = 0; i < MaxTries; i++)
+        {
+            float x = Random.Range(origin.x - _borderWidth, origin.x + size.x + _borderWidth);
+            float z = Random.Range(origin.z - _borderWidth, origin.z + size.z + _borderWidth);
+            bool insideBoundary = x > origin.x - gap && x < origin.x + size.x + gap &&
+                                  z > origin.z - gap && z < origin.z + size.z + gap;
+            if (insideBoundary)
+                continue;
+
+            spot = new Vector3(x, 0f, z);
+            if (others != null && IsNearAny(spot, others, minDistanceToOthers))
+                continue;
+
+            spot.y = OuterHeightAt(terrain, x, z);
+            return true;
+        }
+
+        spot = Vector3.zero;
+        return false;
+    }
+
+    private static void RemoveColliders(GameObject clone)
+    {
+        foreach (Collider collider in clone.GetComponentsInChildren<Collider>(true))
+            DestroyImmediate(collider);
     }
 }

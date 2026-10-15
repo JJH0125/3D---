@@ -54,6 +54,36 @@ namespace Squad
         private Vector3 _wanderTarget;
         private Pathfinder _pathfinder;
 
+        // 이동은 GOAP 행동이 Update(매 프레임)에서 부르는데, MovePosition은 다음 물리 갱신 때에야 반영된다.
+        // 그 사이에 다시 부르면 아직 옮기기 전의 위치에서 계산해 앞의 이동이 덮어써지므로,
+        // 예약해 둔 위치와 방향을 기억했다가 거기서 이어서 움직인다. 물리 갱신이 끝나면 비운다.
+        // (이렇게 하지 않으면 프레임이 물리 갱신보다 적게 도는 상황(50fps 미만)에서 그만큼 느려진다)
+        private Vector3? _pendingPosition;
+        private Quaternion? _pendingRotation;
+
+        // 예약해 둔 이동이 있으면 그 자리를, 없으면 지금 자리를 돌려준다.
+        private Vector3 Position => _pendingPosition ?? _rigidbody.position;
+        private Quaternion Rotation => _pendingRotation ?? _rigidbody.rotation;
+
+        // FixedUpdate 바로 뒤의 물리 갱신에서 예약한 이동이 반영되므로, 여기서 예약을 비운다.
+        private void FixedUpdate()
+        {
+            _pendingPosition = null;
+            _pendingRotation = null;
+        }
+
+        private void MoveBody(Vector3 position)
+        {
+            _rigidbody.MovePosition(position);
+            _pendingPosition = position;
+        }
+
+        private void TurnBody(Quaternion rotation)
+        {
+            _rigidbody.MoveRotation(rotation);
+            _pendingRotation = rotation;
+        }
+
         private void Awake()
         {
             _rigidbody = GetComponent<Rigidbody>();
@@ -83,7 +113,7 @@ namespace Squad
         public bool MoveTo(Vector3 target, float arriveRadius, SquadBlackboard.AlertLevel alert)
         {
             // 도착을 확인하면 true를 return.
-            Vector3 flatSelf = Flat(_rigidbody.position);
+            Vector3 flatSelf = Flat(Position);
             if (Vector3.Distance(flatSelf, Flat(target)) <= arriveRadius)
             {
                 StopHorizontal();
@@ -98,7 +128,7 @@ namespace Squad
                 Vector3.Distance(_lastPathTarget, target) > repathThreshold)
             {
                 _path = _pathfinder != null ?
-                _pathfinder.FindPath(_rigidbody.position, target) : null;
+                _pathfinder.FindPath(Position, target) : null;
                 _waypointIndex = 0;
                 _lastPathTarget = target;
             }
@@ -120,8 +150,7 @@ namespace Squad
         public void LookAround()
         {
             StopHorizontal();
-            _rigidbody.MoveRotation(_rigidbody.rotation *
-                Quaternion.AngleAxis(turnSpeed * 12f * Time.deltaTime, Vector3.up));
+            TurnBody(Rotation * Quaternion.AngleAxis(turnSpeed * 12f * Time.deltaTime, Vector3.up));
         }
 
         /// <summary>
@@ -174,7 +203,7 @@ namespace Squad
             if (_path == null || _waypointIndex >= _path.Count)
                 return;
 
-            Vector3 flatSelf = Flat(_rigidbody.position); // 내 위치의 평면 버전
+            Vector3 flatSelf = Flat(Position); // 내 위치의 평면 버전
             Vector3 wp = _path[_waypointIndex];
 
             // 웨이포인트 도달 체크
@@ -186,20 +215,21 @@ namespace Squad
                 wp = _path[_waypointIndex];
             }
 
-            Vector3 dir = (Flat(wp) - flatSelf).normalized; // 평면 상에서 방향 계산
-            Vector3 step = dir * speed * Time.fixedDeltaTime;
-            Vector3 next = _rigidbody.position + step;      // 실제 위치 + 이동
+            Vector3 toWaypoint = Flat(wp) - flatSelf;
+            Vector3 dir = toWaypoint.normalized; // 평면 상에서 방향 계산
+            // 매 프레임 부르므로 프레임 시간만큼 움직인다. 프레임이 길어도 웨이포인트를 지나치지 않게 한다.
+            float distance = Mathf.Min(speed * Time.deltaTime, toWaypoint.magnitude);
+            Vector3 next = Position + dir * distance;      // 실제 위치 + 이동
             // 길찾기는 위에서 내려다본 평면(xz)에서만 이뤄지므로, 높이(y)는 여기서 따로 정한다.
             // 지형이 있으면 옮겨 갈 자리의 땅 높이에 맞추고, 없으면 지금 높이를 유지한다.
             next.y = HeightAt(next);
-            _rigidbody.MovePosition(next);
+            MoveBody(next);
 
             // 유의미한 이동을 한다면
             if (dir.sqrMagnitude > 0.001f)
             {
                 Quaternion look = Quaternion.LookRotation(dir, Vector3.up);
-                _rigidbody.MoveRotation(Quaternion.Slerp(
-                    _rigidbody.rotation, look, turnSpeed * Time.fixedDeltaTime));
+                TurnBody(Quaternion.Slerp(Rotation, look, turnSpeed * Time.deltaTime));
             }
         }
 

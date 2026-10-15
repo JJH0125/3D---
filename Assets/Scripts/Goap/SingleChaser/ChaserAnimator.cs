@@ -33,6 +33,8 @@ namespace Squad
         [SerializeField] private float walkAnimMoveSpeed = 6f;
         [Tooltip("Walk 애니메이션의 최대 재생 배속")]
         [SerializeField] private float maxAnimSpeed = 2.5f;
+        [Tooltip("이 적의 움직임 전체에 곱하는 재생 배속. 1보다 작으면 느리고 무겁게 움직인다 (이동 속도는 그대로다)")]
+        [SerializeField] private float animSpeedMultiplier = 1f;
 
         private Rigidbody _rigidbody;
         private Vector3 _lastPosition;
@@ -68,9 +70,10 @@ namespace Squad
             animator.SetBool("IsMove", isMove);
 
             // 걷는 동안에만 이동 속도에 맞춰 재생 속도를 바꾸고, 멈추면 원래대로 돌린다.
-            animator.speed = isMove
+            float speed = isMove
                 ? Mathf.Clamp(_moveSpeed / walkAnimMoveSpeed, 0.5f, maxAnimSpeed)
                 : 1f;
+            animator.speed = speed * animSpeedMultiplier;
         }
 
         /// <summary>

@@ -21,14 +21,15 @@ namespace Squad
         [SerializeField] private float viewDistance = 22f;
         [Tooltip("적의 시야각")]
         [SerializeField] private float viewAngle = 120f;
-        [Tooltip("적의 눈높이")]
-        [SerializeField] private float eyeHeight = 1.6f;
+        [Tooltip("적의 눈높이(m). 적 오브젝트 위치 기준이다. 모델의 얼굴 높이(Jumpscare의 Face Height)와 맞춘다")]
+        [SerializeField] private float eyeHeight = 11.6f;
         [Tooltip("감지할 대상 레이어")]
         [SerializeField] private LayerMask targetLayer;
         [Tooltip("장애물로 인식할 대상 레이어")]
         [SerializeField] private LayerMask obstacleLayer;
-        [Tooltip("플레이어의 키")]
-        [SerializeField] private float playerHeight = 1.2f;
+        [Tooltip("시선을 겨냥할 플레이어 몸의 높이(m). 플레이어 오브젝트 위치(몸 한가운데, 발에서 1m 위) 기준이다. " +
+                 "모델의 가슴 높이에 맞춘다")]
+        [SerializeField] private float playerHeight = 3.5f;
         [Tooltip("Detection을 수행할 주기")]
         [SerializeField] private float detectInterval = 0.2f;
 
@@ -226,7 +227,7 @@ namespace Squad
             if (Application.isPlaying && player != null)
             {
                 Vector3 eye = transform.position + Vector3.up * eyeHeight;
-                Vector3 target = player.position + Vector3.up * 1.2f;
+                Vector3 target = player.position + Vector3.up * playerHeight;
                 Gizmos.color = visibleJustBefore ? Color.green : Color.red;
                 Gizmos.DrawLine(eye, target);
             }

@@ -34,6 +34,9 @@ namespace Squad
         [Tooltip("동시에 재생할 수 있는 3D 효과음의 최대 개수")]
         [SerializeField] private int poolSize = 8;
 
+        /// <summary>효과음 볼륨. 따로 소리를 내는 스크립트(CctvNoiseEffect 등)도 이 값에 맞춘다.</summary>
+        public float Volume => volume;
+
         // UI용 AudioSource
         private AudioSource _uiSource;
         // 월드용 AudioSource

@@ -2,14 +2,13 @@ using UnityEngine;
 
 /// <summary>
 /// 플레이어 이동. CharacterController를 써서 벽에 막히고, 경사·계단을
-/// 오르고, 중력과 점프를 처리한다.
+/// 오르고, 중력을 처리한다. (점프는 없다)
 ///
 /// CharacterController는 물리 시뮬레이션에 참여하지 않으므로 중력이
 /// 자동으로 적용되지 않는다. 그래서 Y_velocity(수직 속도)를
 /// 직접 관리한다:
 ///   - 매 프레임 중력만큼 아래로 가속
 ///   - 바닥에 닿으면 0 근처로 리셋(계속 아래로 쌓이지 않게)
-///   - 점프하면 위쪽 속도를 한 번 넣어 줌
 /// 실제 물리의 "가속도 → 속도 → 위치" 흐름을 손으로 구현하는 셈이다.
 /// </summary>
 
@@ -23,8 +22,6 @@ public class Player : MonoBehaviour
     [SerializeField] private float walkSpeed = 7.5f;
     [Tooltip("중력 가속도(음수)")]
     [SerializeField] private float gravity = -20f;
-    [Tooltip("점프 가능한 높이(m)")]
-    [SerializeField] private float jumpHeight = 1.2f;
 
     private Vector3 cameraForward;
     private Vector3 cameraRight;
@@ -39,7 +36,6 @@ public class Player : MonoBehaviour
     private float Z_Axis;
     private Vector3 horizontal;
     private bool isWalk;
-    private bool isJump;
     /// 플레이어가 속한 차원. 게임 시작 시 항상 Real 차원.
     public Dimension myDimension { get; private set; } = Dimension.Real;
     private Transform cameraTransform;
@@ -78,7 +74,6 @@ public class Player : MonoBehaviour
         /// 일시정지 중에는 입력을 받지 않는다.
         /// Move는 deltaTime이 0이라 멈추지만, Turn은 회전값을 바로 넣기 때문에
         /// 막지 않으면 일시정지 화면에서도 방향키로 캐릭터가 돌아간다.
-        /// (점프 입력이 쌓였다가 재개 직후 튀는 것도 함께 막는다)
         if (Time.timeScale == 0f)
             return;
 
@@ -93,28 +88,17 @@ public class Player : MonoBehaviour
         X_Axis = Input.GetAxisRaw("Horizontal");
         Z_Axis = Input.GetAxisRaw("Vertical");
         isWalk = Input.GetButton("Walk"); // 왼쪽 shift 키
-
-        if (Input.GetButtonDown("Jump") && controller.isGrounded)
-            isJump = true;
     }
 
     /// 1. 입력받은 x와 z, Walk키에 따라 수평 속도를 결정한다
-    /// 2. Jump를 입력받았다면 y 속도를 점프 초기 속도로 초기화한다
-    /// 3. 최종 결정된 속도로 캐릭터를 한 프레임 이동시킨다
-    /// 4. 이동 후 캐릭터가 공중에 떠있다면 y 속도를 감소시키고
+    /// 2. 최종 결정된 속도로 캐릭터를 한 프레임 이동시킨다
+    /// 3. 이동 후 캐릭터가 공중에 떠있다면(비탈에서 떨어질 때 등) y 속도를 감소시키고
     ///    착지했다면 그에 맞게 처리한다
-    /// 5. 애니메이션을 상황에 맞게 적절히 적용한다
+    /// 4. 애니메이션을 상황에 맞게 적절히 적용한다
     void Move()
     {
         horizontal = (cameraRight * X_Axis + cameraForward * Z_Axis).normalized;
         horizontal *= isWalk ? walkSpeed : moveSpeed;
-
-        if (isJump)
-        {
-            // 점프 초기 속도는 v^2 = 2gh에 의해 결정
-            Y_velocity = Mathf.Sqrt(-2f * jumpHeight * gravity);
-            isJump = false;
-        }
 
         Vector3 velocity = horizontal + Vector3.up * Y_velocity;
         controller.Move(velocity * Time.deltaTime);
