@@ -1,12 +1,12 @@
 {
-  "files.exclude": {
-    "**/*.meta": true,
-    "**/*.slnx": true,
-    "**/Library": true,
-    "**/Temp": true,
-    "**/obj": true,
-    "**/Logs": true
-  },
-  "dotnet.defaultSolution": "3D 연습.slnx",
-  "dotnet.preferCSharpExtension": true
+    "files.exclude": {
+        "**/*.meta": true,
+        "**/*.slnx": true,
+        "**/Library": true,
+        "**/Temp": true,
+        "**/obj": true,
+        "**/Logs": true
+    },
+    "dotnet.defaultSolution": "Contaminated.slnx",
+    "dotnet.preferCSharpExtension": true
 }
